@@ -1,29 +1,107 @@
 import mongoose from "mongoose";
+import userModel from "../model/userModel.js";
 import JournalModel from "../model/journalModel.js";
 import { analyzeJournal } from "../config/ai.js";
+import axios from "axios";
 
 
 // To save the written Journal of the User in the database
+// const createJournalEntry = async (req, res) => {
+//     try {
+//         const userID = req.user.id;
+//         const { text } = req.body;
+//         if (!userID || !text) {
+//             return res.status(400).json({ message: "userID and text are required" })
+//         }
+//         const newJournal = new JournalModel({
+//             userID,
+//             text,
+//         })
+//         await newJournal.save();
+//         return res.status(201).json({ success: true, message: "Journal entry created successfully", journal: newJournal })
+//     } catch (error) {
+//         console.error("Error creating journal entry: ", error);
+//         res.status(500).json({ message: "Internal Server Error" })
+//     }
+// }
 const createJournalEntry = async (req, res) => {
     try {
-        const userID = req.user.id;
-        const { text } = req.body;
+        const userID = req.user.id
+        const { text } = req.body
+
         if (!userID || !text) {
-            return res.status(400).json({ message: "userID and text are required" })
+            return res.status(400).json({
+                message: "userID and text are required"
+            })
         }
+
+        // =========================
+        // 1️⃣ Send text to Python
+        // =========================
+        const analysisResponse = await axios.post(
+            `${process.env.PYTHON_SERVICE_URL}/analyze`,
+            { text }
+        )
+
+        const analysis = analysisResponse.data
+
+        // =========================
+        // 2️⃣ Store Journal + Analysis
+        // =========================
         const newJournal = new JournalModel({
             userID,
             text,
+            analysis
         })
-        await newJournal.save();
-        return res.status(201).json({ success: true, message: "Journal entry created successfully", journal: newJournal })
+
+        await newJournal.save()
+
+        // =========================
+        // 3️⃣ Fetch Last 5 Entries
+        // =========================
+        const lastTw0 = await JournalModel.find({ userID })
+            .sort({ createdAt: -1 })
+            .limit(2)
+
+        const lastTwoAnalyses = lastTw0
+            .reverse() // oldest → newest
+            .map(j => j.analysis)
+
+        // =========================
+        // 4️⃣ Send to Trajectory Engine
+        // =========================
+        const trajectoryResponse = await axios.post(
+            `${process.env.PYTHON_SERVICE_URL}/trajectory`,
+            { entries: lastTwoAnalyses }
+        )
+
+        const trajectory = trajectoryResponse.data
+
+        // =========================
+        // 5️⃣ Update User Trajectory
+        // =========================
+        await userModel.findByIdAndUpdate(userID, {
+            trajectory: {
+                ...trajectory,
+                lastUpdated: new Date()
+            }
+        })
+
+        return res.status(201).json({
+            success: true,
+            message: "Journal entry created successfully",
+            journal: newJournal
+        })
+
     } catch (error) {
-        console.error("Error creating journal entry: ", error);
-        res.status(500).json({ message: "Internal Server Error" })
+        console.error("Error creating journal entry:", error)
+        return res.status(500).json({
+            message: "Internal Server Error"
+        })
     }
 }
 
-//To get the list of all Journals written by the User
+//To get the list of all Journals written by the User - For Frontend display 
 const getUserJournal = async (req, res) => {
     try {
         const userID = req.user.id;
@@ -41,7 +119,7 @@ const getUserJournal = async (req, res) => {
     }
 }
 
-// To get a particular Journal of  User
+// To get a particular Journal of  User - For Frontend display when user clicks on a particular Journal from the list of Journals
 
 const getUserJournalByID = async (req, res) => {
     try {
