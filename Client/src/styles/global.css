@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   SAATHI.AI – DESIGN TOKEN SYSTEM
+========================================= */
+
+/* ========================
+   1. DESIGN TOKENS
+======================== */
+
+:root {
+  --primary: hsl(265, 38%, 58%);
+  --primary-hover: hsl(265, 42%, 52%);
+  --primary-soft: hsl(265, 40%, 92%);
+  --accent: hsl(210, 45%, 60%);
+  --success: hsl(145, 32%, 52%);
+  --error: hsl(0, 45%, 55%);
+
+  --background: hsl(32, 35%, 96%);
+  --surface: hsl(0, 0%, 100%);
+  --surface-elevated: hsl(0, 0%, 100%);
+
+  --text-primary: hsl(230, 15%, 20%);
+  --text-secondary: hsl(230, 12%, 45%);
+  --text-muted: hsl(230, 10%, 65%);
+
+  --border: hsl(265, 20%, 85%);
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  --transition: all 0.25s ease;
+
+  --font-primary: "Inter", sans-serif;
+  --font-heading: "Inter", sans-serif;
+}
+
+/* ========================
+   THEME VARIANTS
+======================== */
+
+body.theme-warm-light {
+  --primary: hsl(22, 55%, 55%);
+  --primary-hover: hsl(22, 60%, 48%);
+  --primary-soft: hsl(22, 70%, 92%);
+  --accent: hsl(35, 60%, 60%);
+  --success: hsl(140, 28%, 48%);
+  --error: hsl(5, 60%, 58%);
+
+  --background: hsl(32, 45%, 96%);
+  --surface: hsl(0, 0%, 100%);
+  --surface-elevated: hsl(32, 35%, 98%);
+
+  --text-primary: hsl(25, 25%, 20%);
+  --text-secondary: hsl(25, 20%, 40%);
+  --text-muted: hsl(25, 15%, 60%);
+
+  --border: hsl(29, 30%, 85%);
+}
+
+body.theme-night-dark {
+  --primary: hsl(275, 55%, 65%);
+  --primary-hover: hsl(275, 60%, 72%);
+  --primary-soft: hsl(275, 35%, 20%);
+  --accent: hsl(220, 50%, 60%);
+  --success: hsl(150, 40%, 55%);
+  --error: hsl(0, 55%, 60%);
+
+  --background: hsl(260, 25%, 10%);
+  --surface: hsl(260, 22%, 16%);
+  --surface-elevated: hsl(260, 22%, 20%);
+
+  --text-primary: hsl(0, 0%, 94%);
+  --text-secondary: hsl(0, 0%, 70%);
+  --text-muted: hsl(0, 0%, 55%);
+
+  --border: hsl(260, 18%, 25%);
+}
+
+/* ========================
+   BASE RESET
+======================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--background);
+  color: var(--text-primary);
+  line-height: 1.6;
+  transition: background 0.4s ease, color 0.4s ease;
+  overflow-x: hidden;
+}
+
+/* ========================
+   TYPOGRAPHY BASE
+======================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+/* ========================
+   GLOBAL TRANSITIONS
+======================== */
+
+button,
+a {
+  transition: var(--transition);
+}
+
+/* ========================
+   OPTIONAL: UTILITY HELPERS
+   (Only if needed)
+======================== */
+
+.surface {
+  background-color: var(--surface);
+}
+
+.surface-elevated {
+  background-color: var(--surface-elevated);
+}
+
+.border-token {
+  border-color: var(--border);
+}
+
+.shadow-soft {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-elevated {
+  box-shadow: var(--shadow-md);
+}
