@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Journal Intelligence Tester</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>Journal Intelligence Model</h2>
+
+<textarea id="journalInput" rows="10" cols="80" placeholder="Write your journal here..."></textarea>
+<br><br>
+<button onclick="analyzeJournal()">Analyze</button>
+
+<pre id="output"></pre>
+
+<h3>Trajectory Graph:</h3>
+<canvas id="trajectoryChart" style="width: 300px; height: 200px;"></canvas>
+
+<script>
+async function analyzeJournal() {
+    const text = document.getElementById("journalInput").value;
+
+    const response = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text })
+    });
+
+    const data = await response.json();
+    const outputDiv = document.getElementById("output");
+    outputDiv.innerHTML = ""; // clear previous output
+
+    // Show past journal entries
+    if (data.past_entries) {
+        let html = "<h3>Past Journal Analyses:</h3>";
+        data.past_entries.forEach((entry, idx) => {
+            html += `<h4>Day ${idx + 1}</h4><pre>${JSON.stringify(entry, null, 2)}</pre>`;
+        });
+        outputDiv.innerHTML += html;
+    }
+
+    // Show trajectory analysis
+    if (data.trajectory) {
+        const traj = data.trajectory;
+        let html = `<h3>Trajectory Analysis:</h3>
+                    <p>Dominant Emotion: <strong>${traj.dominant_emotion}</strong></p>
+                    <p>Weighted Sentiment: <strong>${traj.weighted_sentiment.toFixed(2)}</strong></p>
+                    <p>Stability Score: <strong>${traj.stability_score.toFixed(2)}</strong></p>
+                    <p>Volatility: <strong>${traj.volatility.toFixed(2)}</strong></p>
+                    <p>Emotion Vector: <pre>${JSON.stringify(traj.emotion_vector, null, 2)}</pre></p>`;
+        outputDiv.innerHTML += html;
+
+        // Plot trajectory graph (small size)
+        const ctx = document.getElementById('trajectoryChart').getContext('2d');
+        if (window.trajectoryChartInstance) window.trajectoryChartInstance.destroy();
+        window.trajectoryChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(traj.emotion_vector),
+                datasets: [{
+                    label: 'Emotion Intensity',
+                    data: Object.values(traj.emotion_vector),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(255, 159, 64, 0.6)',
+                        'rgba(255, 205, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(201, 203, 207, 0.6)'
+                    ],
+                    borderColor: 'rgba(0,0,0,0.7)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false, // keep graph small
+                scales: { y: { beginAtZero: true, max: 1 } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // Show top 3 matches for CurrentUser
+    if (data.top_matches && data.top_matches.CurrentUser) {
+        const matches = data.top_matches.CurrentUser;
+        let html = "<h3>Top 3 Matches:</h3><ul>";
+        matches.forEach(m => {
+            html += `<li>
+                <strong>${m.name}</strong> | Score: ${m.match_score.toFixed(2)}<br>
+                Stability: ${m.qualities.stability.toFixed(2)}, 
+                Risk: ${m.qualities.risk.toFixed(2)}, 
+                Sentiment: ${m.qualities.weighted_sentiment.toFixed(2)}
+            </li>`;
+        });
+        html += "</ul>";
+        outputDiv.innerHTML += html;
+    }
+}
+</script>
+
+</body>
+</html>
