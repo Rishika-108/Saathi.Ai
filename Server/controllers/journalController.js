@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import JournalModel from "../model/journalModel.js";
-import { analyzeJournal } from "../config/ai.js";
+import { analyzeJournal } from "../../config/ai.js";
 
 
 // To save the written Journal of the User in the database

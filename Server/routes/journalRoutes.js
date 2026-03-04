@@ -1,6 +1,6 @@
 import express from 'express'
-import { createJournalEntry, getUserJournal, getUserJournalByID, runAnalyser } from '../controllers/journalController.js';
-import authMiddleware from '../middleware/authMiddleware.js';
+import { createJournalEntry, getUserJournal, getUserJournalByID, runAnalyser } from '../../controllers/journalController.js';
+import authMiddleware from '../../middleware/authMiddleware.js';
 
 const journalRouter = express.Router();
 
