@@ -157,3 +157,56 @@ a {
 .shadow-elevated {
   box-shadow: var(--shadow-md);
 }
+
+.has-journal {
+  background: var(--primary);
+  color: white !important;
+  border-radius: 6px;
+}
+/* highlight journal days */
+.journal-day {
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* selected day */
+.react-calendar__tile--active {
+  background: var(--primary) !important;
+  color: white !important;
+  border-radius: 6px;
+}
+
+/* today highlight */
+.react-calendar__tile--now {
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+}
+
+/* hover */
+.react-calendar__tile:hover {
+  background: rgba(0,0,0,0.05);
+}
+.react-calendar {
+  width: 100% !important;
+  background: transparent;
+  border: none;
+}
+
+.react-calendar__navigation button {
+  color: var(--text-primary);
+}
+
+.react-calendar__tile {
+  border-radius: 6px;
+  padding: 0.6rem 0;
+}
+
+.react-calendar__tile--active {
+  background: var(--primary) !important;
+  color: white !important;
+}
+
+.journal-day {
+  background: rgba(99,102,241,0.15);
+}

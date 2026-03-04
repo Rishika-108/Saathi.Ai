@@ -1,24 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiMenu, FiX, FiSun, FiMoon, FiUser } from "react-icons/fi";
+import { useLocation, useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
+import { useApp } from "../context/AppContext";
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const { user, logout, toggleTheme, isDarkTheme, login } = useApp();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const profileRef = useRef(null);
 
   /* Scroll shadow */
   useEffect(() => {
+
     const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => window.removeEventListener("scroll", handleScroll);
+
+  }, []);
+
+  /* Close profile when clicking outside */
+  useEffect(() => {
+
+    const handleClickOutside = (e) => {
+
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+
+    };
+
+    document.addEventListener("click", handleClickOutside);
+
+    return () => document.removeEventListener("click", handleClickOutside);
+
   }, []);
 
   /* Theme toggle */
   useEffect(() => {
+
     if (isDarkTheme) {
       document.body.classList.remove("theme-warm-light");
       document.body.classList.add("theme-night-dark");
@@ -26,11 +56,26 @@ export default function Navbar() {
       document.body.classList.remove("theme-night-dark");
       document.body.classList.add("theme-warm-light");
     }
+
   }, [isDarkTheme]);
 
-  const logout = () => {
-    setUser(null);
+  const handleLogout = () => {
+
+    logout();
+    setProfileOpen(false);
+    setIsOpen(false);
+    navigate("/");
+
   };
+
+  const navigateAndClose = (path) => {
+
+    navigate(path);
+    setIsOpen(false);
+
+  };
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <>
@@ -39,69 +84,199 @@ export default function Navbar() {
           scrolled ? "shadow-elevated" : ""
         }`}
       >
+
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
           {/* Logo */}
-          <div className="flex flex-col leading-tight">
+          <div
+            onClick={() => navigate("/")}
+            className="flex flex-col leading-tight cursor-pointer"
+          >
             <span className="text-xl font-semibold text-textPrimary">
               Saathi.AI
             </span>
+
             <span className="text-xs text-textSecondary tracking-wide">
               Your Emotional Companion
             </span>
           </div>
 
-          {/* Desktop Controls */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6">
 
-            {/* Theme Toggle */}
+            {user && (
+              <>
+                <button
+                  onClick={() => navigate("/")}
+                  className={`text-sm ${
+                    isActive("/")
+                      ? "text-primary font-medium"
+                      : "text-textPrimary hover:text-primary"
+                  }`}
+                >
+                  Home
+                </button>
+
+                <button
+                  onClick={() => navigate("/journal")}
+                  className={`text-sm ${
+                    isActive("/journal")
+                      ? "text-primary font-medium"
+                      : "text-textPrimary hover:text-primary"
+                  }`}
+                >
+                  Journal
+                </button>
+
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className={`text-sm ${
+                    isActive("/dashboard")
+                      ? "text-primary font-medium"
+                      : "text-textPrimary hover:text-primary"
+                  }`}
+                >
+                  Dashboard
+                </button>
+              </>
+            )}
+
+            {/* Theme */}
             <button
-              onClick={() => setIsDarkTheme(!isDarkTheme)}
-              className="p-2 rounded-md hover:bg-primary/10 text-textPrimary"
+              onClick={toggleTheme}
+              className="p-2 rounded-md hover:bg-primary/10 text-textPrimary transition"
             >
               {isDarkTheme ? <FiSun size={18} /> : <FiMoon size={18} />}
             </button>
 
-            {/* Auth Section */}
+            {/* Profile */}
             {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-textPrimary flex items-center gap-2">
+
+              <div ref={profileRef} className="relative">
+
+                <button
+                  onClick={() => setProfileOpen(prev => !prev)}
+                  className="flex items-center gap-2 text-sm text-textPrimary hover:text-primary"
+                >
                   <FiUser size={16} />
                   {user.name}
-                </span>
-                <button
-                  onClick={logout}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Logout
                 </button>
+
+                {profileOpen && (
+                  <div
+                    className="
+                    absolute right-0 mt-2 w-40
+                    bg-surface border border-borderColor
+                    rounded-md shadow-elevated py-2
+                    animate-fadeIn
+                    "
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="
+                      w-full text-left px-4 py-2 text-sm text-textPrimary
+                      hover:bg-primary/10
+                      "
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+
               </div>
+
             ) : (
+
               <button
                 onClick={() => setIsAuthOpen(true)}
                 className="px-5 py-2 rounded-md bg-primary text-white text-sm font-medium shadow-soft hover:opacity-90"
               >
                 Login / Sign-up
               </button>
+
             )}
+
           </div>
 
-          {/* Mobile Toggle */}
+          {/* Mobile Menu Button */}
           <button
             className="md:hidden text-textPrimary"
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => {
+              setIsOpen(prev => !prev);
+              setProfileOpen(false);
+            }}
           >
             {isOpen ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
+
         </div>
+
+        {/* Mobile Menu */}
+        <div
+          className={`md:hidden border-t border-borderColor overflow-hidden transition-all duration-300 ${
+            isOpen ? "max-h-80 py-4" : "max-h-0"
+          }`}
+        >
+
+          <div className="px-6 flex flex-col gap-4">
+
+            {user && (
+              <>
+                <button
+                  onClick={() => navigateAndClose("/")}
+                  className="text-left text-textPrimary"
+                >
+                  Home
+                </button>
+
+                <button
+                  onClick={() => navigateAndClose("/journal")}
+                  className="text-left text-textPrimary"
+                >
+                  Journal
+                </button>
+
+                <button
+                  onClick={() => navigateAndClose("/dashboard")}
+                  className="text-left text-textPrimary"
+                >
+                  Dashboard
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 text-textPrimary"
+            >
+              {isDarkTheme ? <FiSun /> : <FiMoon />}
+              Theme
+            </button>
+
+            {!user && (
+              <button
+                onClick={() => {
+                  setIsAuthOpen(true);
+                  setIsOpen(false);
+                }}
+                className="px-5 py-2 rounded-md bg-primary text-white text-sm"
+              >
+                Login / Sign-up
+              </button>
+            )}
+
+          </div>
+
+        </div>
+
       </header>
 
-      {/* Separated Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onAuthSuccess={(mockUser) => setUser(mockUser)}
+        onAuthSuccess={(userData, token) => login(userData, token)}
       />
+
     </>
   );
 }
