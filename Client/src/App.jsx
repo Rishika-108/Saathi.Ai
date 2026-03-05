@@ -1,18 +1,38 @@
-import { useState } from 'react'
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
+
+import { AppProvider } from "./context/AppContext";
+
+import Navbar from "./components/Navbar";
+
+import Home from "./pages/Home";
+import Journal from "./pages/Journal";
+import Dashboard from "./pages/Dashboard";
+import Chat from "./pages/Chat";
+
 import "./styles/global.css";
-import Home from './pages/Home';
-import Chat from './pages/Chat';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <ChakraProvider value={defaultSystem}>
-      <Home/>
-      <Chat/>
+      <AppProvider>
+
+        <Router>
+
+          <Navbar />
+
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/journal" element={<Journal />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/chat" element={<Chat />} />
+          </Routes>
+
+        </Router>
+
+      </AppProvider>
     </ChakraProvider>
-  )
+  );
 }
 
-export default App
+export default App;

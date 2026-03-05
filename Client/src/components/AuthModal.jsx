@@ -2,19 +2,26 @@ import { useState, useEffect } from "react";
 import { FiGithub, FiLinkedin, FiTwitter } from "react-icons/fi";
 import Lottie from "lottie-react";
 import loginAnimation from "../assets/login.json";
+import { useApp } from "../context/AppContext";
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
+  const { login } = useApp();
   const [authMode, setAuthMode] = useState("login");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
+  const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
   /* Lock Scroll */
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "auto";
-  }, [isOpen]);
+  document.body.style.overflow = isOpen ? "hidden" : "auto";
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [isOpen]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -23,22 +30,80 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
 
-    const mockUser = {
-      name:
-        authMode === "register"
-          ? formData.name || "User"
-          : "User",
-      email: formData.email,
-      isLoggedIn: true,
-    };
+  e.preventDefault();
 
-    onAuthSuccess(mockUser);
-    onClose();
-    setFormData({ name: "", email: "", password: "" });
+  let token = null;
+
+  try {
+
+    const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+    const endpoint =
+      authMode === "login"
+        ? `${API}/user/login`
+        : `${API}/user/register`;
+
+    const payload =
+      authMode === "login"
+        ? {
+            email: formData.email,
+            password: formData.password,
+          }
+        : {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+          };
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Authentication failed");
+      return;
+    }
+
+    if (data?.token) {
+      token = data.token;
+    }
+
+  } catch (err) {
+
+    console.error("Auth API error:", err);
+    return;
+
+  }
+
+  const userData = {
+    name:
+      authMode === "register"
+        ? formData.name || "User"
+        : "User",
+    email: formData.email,
+    isLoggedIn: true,
   };
+
+  onAuthSuccess(userData, token);
+
+  onClose();
+
+  setFormData({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+};
+  
 
   if (!isOpen) return null;
 
