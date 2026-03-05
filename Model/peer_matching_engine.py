@@ -15,6 +15,9 @@ def stability_alignment(s1, s2):
 
 def sentiment_alignment(s1, s2):
     return float(1 - abs(s1 - s2))
+# def sentiment_alignment(s1, s2):
+#     score = 1 - abs(s1 - s2) / 2
+#     return max(0.0, float(score))
 
 def risk_alignment(r1, r2):
     if r1 > 0.75 or r2 > 0.75:  # safety override

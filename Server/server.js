@@ -8,6 +8,7 @@ import { redisClient,initRedis } from "../Server/config/redisClient.js";
 import { connectDB } from "../Server/config/db.js";
 import userRouter from "../Server/routes/userRoutes.js";
 import journalRouter from '../Server/routes/journalRoutes.js' 
+import peerRoutes from "../Server/routes/peerRequestRoutes.js"; 
 import sessionRouter from "../Server/routes/socketRoute.js";
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 //API Endpoint to connect to user
 app.use("/api/user", userRouter);
 app.use("/api/journal", journalRouter);
+app.use("/api/peers", peerRoutes);
 // app.use("/api/session", sessionRouter);
 
 app.get("/", (req, res) => {

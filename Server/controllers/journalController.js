@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import userModel from "../model/userModel.js";
 import JournalModel from "../model/journalModel.js";
 import { getPeerMatches } from "../utils/service.js";
+import { generateAlias } from "../utils/aliasGenerator.js";
+import { generateMatchReason } from "../utils/matchReason.js";
 import axios from "axios";
 
 const createJournalEntry = async (req, res) => {
@@ -90,6 +92,26 @@ export async function updateUserTrajectory(userID) {
   }
 }
 
+// export const fetchPeerMatches = async (req, res) => {
+//   try {
+
+//     const userID = req.user.id;
+
+//     const matches = await getPeerMatches(userID, 3);
+
+//     return res.status(200).json({
+//       success: true,
+//       matches
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching peer matches:", error);
+//     return res.status(500).json({
+//       message: "Failed to fetch peer matches"
+//     });
+//   }
+// };
+
 export const fetchPeerMatches = async (req, res) => {
   try {
 
@@ -97,14 +119,68 @@ export const fetchPeerMatches = async (req, res) => {
 
     const matches = await getPeerMatches(userID, 3);
 
+    if (!matches || matches.length === 0) {
+      return res.status(200).json({
+        success: true,
+        matches: []
+      });
+    }
+
+    const matchIDs = matches.map(m => m.user_id);
+
+    const users = await userModel.find(
+      { _id: { $in: matchIDs } },
+      { trajectory: 1 }
+    ).lean();
+
+    const userMap = {};
+    users.forEach(u => {
+      userMap[u._id.toString()] = u;
+    });
+
+    const enrichedMatches = matches.map(match => {
+
+      const user = userMap[match.user_id];
+
+      const compatibility =
+        match.match_score > 0.85
+          ? "Highly Compatible"
+          : match.match_score > 0.7
+          ? "Good Match"
+          : "Potential Match";
+
+      const dominantEmotion = user?.trajectory?.dominant_emotion;
+
+      const reason = generateMatchReason(
+        match.breakdown,
+        dominantEmotion
+      );
+
+      return {
+        user_id: match.user_id,
+        alias: generateAlias(),
+
+        compatibility,
+        match_score: match.match_score,
+
+        dominant_emotion: dominantEmotion,
+        stability_score: user?.trajectory?.stability_score,
+
+        reason
+      };
+
+    });
+
     return res.status(200).json({
       success: true,
-      matches
+      matches: enrichedMatches
     });
 
   } catch (error) {
     console.error("Error fetching peer matches:", error);
+
     return res.status(500).json({
+      success: false,
       message: "Failed to fetch peer matches"
     });
   }
