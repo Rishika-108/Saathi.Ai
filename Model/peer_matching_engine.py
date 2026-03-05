@@ -1,9 +1,6 @@
 import numpy as np
 import random
 
-# -----------------------------
-# CORE MATCHING FUNCTIONS
-# -----------------------------
 def cosine_similarity(vec1, vec2):
     v1 = np.array(list(vec1.values()))
     v2 = np.array(list(vec2.values()))

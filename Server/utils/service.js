@@ -1,10 +1,10 @@
 import axios from "axios";
-import userModel from "../models/userModel.js";
+import userModel from "../model/userModel.js";
 
 export const getPeerMatches = async (userID, topN = 3) => {
   try {
     const users = await userModel.find(
-     { _id: { $ne: userID }, trajectory: { $ne: null } },
+     { trajectory: { $ne: null } },
      { trajectory: 1 }
      ).lean();
 

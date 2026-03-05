@@ -1,29 +1,9 @@
 import mongoose from "mongoose";
 import userModel from "../model/userModel.js";
 import JournalModel from "../model/journalModel.js";
-import { analyzeJournal } from "../config/ai.js";
+import { getPeerMatches } from "../utils/service.js";
 import axios from "axios";
 
-
-// To save the written Journal of the User in the database
-// const createJournalEntry = async (req, res) => {
-//     try {
-//         const userID = req.user.id;
-//         const { text } = req.body;
-//         if (!userID || !text) {
-//             return res.status(400).json({ message: "userID and text are required" })
-//         }
-//         const newJournal = new JournalModel({
-//             userID,
-//             text,
-//         })
-//         await newJournal.save();
-//         return res.status(201).json({ success: true, message: "Journal entry created successfully", journal: newJournal })
-//     } catch (error) {
-//         console.error("Error creating journal entry: ", error);
-//         res.status(500).json({ message: "Internal Server Error" })
-//     } 
-// }
 const createJournalEntry = async (req, res) => {
   try {
     const userID = req.user.id;
