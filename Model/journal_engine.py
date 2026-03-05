@@ -116,6 +116,7 @@ def analyze_sentiment(text):
 # =========================
 
 def analyze_theme(text):
+    text = " ".join(text.replace("\r","").replace("\n"," ").split())  # clean text
     result = theme_pipeline(
         text,
         CANDIDATE_THEMES,
@@ -127,6 +128,8 @@ def analyze_theme(text):
         for label, score in zip(result["labels"], result["scores"])
         if score > 0.35
     ]
+    if not themes:
+        themes = [(result["labels"][0], result["scores"][0])]  # ensure at least 1
 
     primary = themes[0][0] if themes else None
     primary_conf = themes[0][1] if themes else None

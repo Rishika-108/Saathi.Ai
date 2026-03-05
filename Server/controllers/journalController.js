@@ -22,84 +22,113 @@ import axios from "axios";
 //     } catch (error) {
 //         console.error("Error creating journal entry: ", error);
 //         res.status(500).json({ message: "Internal Server Error" })
-//     }
+//     } 
 // }
 const createJournalEntry = async (req, res) => {
-    try {
-        const userID = req.user.id
-        const { text } = req.body
+  try {
+    const userID = req.user.id;
+    const { text } = req.body;
 
-        if (!userID || !text) {
-            return res.status(400).json({
-                message: "userID and text are required"
-            })
-        }
-
-        // =========================
-        // 1️⃣ Send text to Python
-        // =========================
-        const analysisResponse = await axios.post(
-            `${process.env.PYTHON_SERVICE_URL}/analyze`,
-            { text }
-        )
-
-        const analysis = analysisResponse.data
-
-        // =========================
-        // 2️⃣ Store Journal + Analysis
-        // =========================
-        const newJournal = new JournalModel({
-            userID,
-            text,
-            analysis
-        })
-
-        await newJournal.save()
-
-        // =========================
-        // 3️⃣ Fetch Last 5 Entries
-        // =========================
-        const lastTw0 = await JournalModel.find({ userID })
-            .sort({ createdAt: -1 })
-            .limit(2)
-
-        const lastTwoAnalyses = lastTw0
-            .reverse() // oldest → newest
-            .map(j => j.analysis)
-
-        // =========================
-        // 4️⃣ Send to Trajectory Engine
-        // =========================
-        const trajectoryResponse = await axios.post(
-            `${process.env.PYTHON_SERVICE_URL}/trajectory`,
-            { entries: lastTwoAnalyses }
-        )
-
-        const trajectory = trajectoryResponse.data
-
-        // =========================
-        // 5️⃣ Update User Trajectory
-        // =========================
-        await userModel.findByIdAndUpdate(userID, {
-            trajectory: {
-                ...trajectory,
-                lastUpdated: new Date()
-            }
-        })
-
-        return res.status(201).json({
-            success: true,
-            message: "Journal entry created successfully",
-            journal: newJournal
-        })
-
-    } catch (error) {
-        console.error("Error creating journal entry:", error)
-        return res.status(500).json({
-            message: "Internal Server Error"
-        })
+    if (!userID || !text) {
+      return res.status(400).json({ message: "userID and text are required" });
     }
+
+    const cleanText = text.replace(/\r/g, "").trim();
+    const analysisResponse = await axios.post(
+      `${process.env.PYTHON_SERVICE_URL}/analyze`,
+      { text: cleanText}
+    );
+    const analysis = analysisResponse.data;
+
+    const newJournal = new JournalModel({
+      userID,
+      text,
+      analysis
+    });
+    await newJournal.save();
+    // Update the trajectory immediately
+    const updatedTrajectory = await updateUserTrajectory(userID);
+
+    return res.status(201).json({
+      success: true,
+      message: "Journal entry created successfully",
+      journal: newJournal,
+      trajectory: updatedTrajectory
+    });
+
+  } catch (error) {
+    console.error("Error creating journal entry:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export async function updateUserTrajectory(userID) {
+  try {
+    // 1️⃣ Fetch last 2 journal entries
+    const entries = await JournalModel.find({ userID })
+      .sort({ createdAt: -1 }) // newest first
+      .limit(2)
+      .lean();
+
+    if (!entries || entries.length === 0) {
+      console.log("No journal entries found for user, setting default trajectory.");
+      // Default trajectory if no entries
+      const defaultTrajectory = {
+        weighted_sentiment: 0.0,
+        dominant_emotion: "neutral",
+        emotion_vector: {},
+        volatility: 0.0,
+        stability_score: 1.0,
+        risk_momentum: 0.0,
+        memory_decay_lambda: 0.7
+      };
+
+      await userModel.findByIdAndUpdate(userID, { trajectory: defaultTrajectory });
+      return defaultTrajectory;
+    }
+
+    // 2️⃣ Reverse to oldest → newest for trajectory calculation
+    const orderedEntries = entries.reverse().map(e => e.analysis);
+
+    // 3️⃣ Call the Python /trajectory endpoint
+    const trajectoryResponse = await axios.post(
+      `${process.env.PYTHON_SERVICE_URL}/trajectory`,
+      { entries: orderedEntries }
+    );
+
+    const trajectory = trajectoryResponse.data;
+
+    // 4️⃣ Update the user's trajectory in MongoDB
+    await userModel.findByIdAndUpdate(userID, { trajectory }, { new: true });
+
+    console.log("Trajectory updated successfully for user:", userID);
+    return trajectory;
+
+  } catch (error) {
+    console.error("Error updating trajectory:", error);
+    throw error;
+  }
 }
+
+export const fetchPeerMatches = async (req, res) => {
+  try {
+
+    const userID = req.user.id;
+
+    const matches = await getPeerMatches(userID, 3);
+
+    return res.status(200).json({
+      success: true,
+      matches
+    });
+
+  } catch (error) {
+    console.error("Error fetching peer matches:", error);
+    return res.status(500).json({
+      message: "Failed to fetch peer matches"
+    });
+  }
+};
 
 //To get the list of all Journals written by the User - For Frontend display 
 const getUserJournal = async (req, res) => {
@@ -120,7 +149,6 @@ const getUserJournal = async (req, res) => {
 }
 
 // To get a particular Journal of  User - For Frontend display when user clicks on a particular Journal from the list of Journals
-
 const getUserJournalByID = async (req, res) => {
     try {
         const userID = req.user.id;
@@ -143,92 +171,4 @@ const getUserJournalByID = async (req, res) => {
     }
 }
 
-// To analyse the Journal of the User - this may change if our model changes
-const runAnalyser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userID = req.user.id;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ message: "Invalid journal ID." });
-        }
-
-        // Fetch the journal for this user
-        const journal = await JournalModel.findOne({ _id: id, userID });
-        if (!journal) {
-            return res.status(404).json({ message: "Journal not found or unauthorized." });
-        }
-
-        // 1️⃣ Call AI service
-        const parsedCards = await analyzeJournal(journal.text);
-
-        // 2️⃣ Map AI response to schema
-        const triggers = parsedCards.map((card) => ({
-            triggerID: new mongoose.Types.ObjectId(),
-            triggerPoint: card.Trigger,
-            triggerScene: card.Scene,
-        }));
-
-        // const solutions = parsedCards.map((card, index) => ({
-        //   triggerID: triggers[index]?.triggerID.toString(),
-        // //   suggestionText: Array.isArray(card.Solution) ? card.Solution.join(" ") : card.Solution,
-        // steps: Array.isArray(card.Solution)
-        // ? card.Solution.map((text, i) => ({
-        //     stepNumber: i + 1,
-        //     description: text
-        //   }))
-        // : [
-        //     {
-        //       stepNumber: 1,
-        //       description: card.Solution || "No suggestion provided"
-        //     }
-        //   ],
-        //   status: "pending",
-        // }));
-        const solutions = parsedCards.map((card, index) => {
-            // 1️⃣ Normalize solution text to a single string
-            let solutionText = "";
-
-            if (Array.isArray(card.Solution)) {
-                solutionText = card.Solution.join(" "); // if AI returned an array
-            } else if (typeof card.Solution === "string") {
-                solutionText = card.Solution; // if AI returned a single string
-            } else {
-                solutionText = ""; // fallback if undefined or invalid
-            }
-
-            // 2️⃣ Split steps safely
-            const stepTexts = solutionText.split(/Step \d+: /).filter(Boolean);
-
-            // 3️⃣ Map into step objects
-            const steps = stepTexts.map((text, i) => ({
-                stepNumber: i + 1,
-                description: text.trim()
-            }));
-
-            return {
-                triggerID: triggers[index]?.triggerID.toString(),
-                steps: steps.length > 0 ? steps : [{ stepNumber: 1, description: "No suggestion available" }],
-                status: "pending"
-            };
-        });
-
-
-        // 3️⃣ Save into MongoDB
-        journal.triggers = triggers;
-        journal.solutions = solutions;
-        await journal.save();
-
-        res.status(200).json({
-            message: "AI analysis completed successfully",
-            triggers,
-            solutions,
-        });
-    } catch (err) {
-        console.error("❌ runAnalyser Error:", err);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-
-export { createJournalEntry, getUserJournal, getUserJournalByID, runAnalyser };
+export { createJournalEntry, getUserJournal, getUserJournalByID};

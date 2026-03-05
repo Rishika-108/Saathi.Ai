@@ -42,7 +42,7 @@ const JournalEntrySchema = new mongoose.Schema({
     text : {type: String, required: true},
      analysis: {
         type: AnalysisSchema,
-        required: false // change it to true, after checking that model gives output
+        required: true // change it to true, after checking that model gives output
     },
     createdAt: {type: Date, default: Date.now}
 })

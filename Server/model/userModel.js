@@ -9,8 +9,6 @@ const TrajectorySchema = new mongoose.Schema({
     },
     volatility: Number,
     stability_score: Number,
-    risk_score: Number,
-    risk_level: String,
     risk_momentum: Number,
     memory_decay_lambda: Number,
     lastUpdated: {
