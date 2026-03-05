@@ -68,7 +68,6 @@ class JournalInput(BaseModel):
 @app.post("/analyze") 
 def analyze(input: JournalInput):
     current_analysis = analyze_journal(input.text)
-    # Optionally keep past entries for trajectory/matches but return the actual analysis for the journal entry 
     return current_analysis 
 
 class TrajectoryInput(BaseModel):
