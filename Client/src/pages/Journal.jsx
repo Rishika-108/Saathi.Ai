@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import JournalBook from "../components/journal/JournalBook";
 import JournalCalendar from "../components/journal/JournalCalendar";
@@ -9,49 +9,46 @@ export default function Journal() {
 
   const [journals, setJournals] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedJournal, setSelectedJournal] = useState("");
-  const [viewMode, setViewMode] = useState(false);
 
-  /* consistent date formatter */
-  const formatDate = (date) =>
-    new Date(date).toISOString().slice(0, 10);
+  const formatDate = (date) => {
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, "0")
+    const day = String(d.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
 
-  /* fetch journals only when user exists */
+  const normalizeDate = (date) => {
+    const d = new Date(date)
+    d.setHours(0,0,0,0)
+    return d
+  }
+
+  const loadJournals = useCallback(async () => {
+
+    try {
+
+      const res = await getJournals();
+
+      if (res?.journals) {
+        setJournals(res.journals);
+      }
+
+    } catch (err) {
+
+      console.error("Journal load error:", err);
+
+    }
+
+  }, [getJournals]);
+
   useEffect(() => {
 
     if (!user) return;
+    loadJournals();
 
-    let mounted = true;
+  }, [user, loadJournals]);
 
-    const load = async () => {
-
-      try {
-
-        const res = await getJournals();
-
-        if (mounted && res?.journals) {
-          setJournals(res.journals);
-        } else {
-          console.log("Journals not present");
-        }
-
-      } catch (err) {
-
-        console.error("Journal load error:", err);
-
-      }
-
-    };
-
-    load();
-
-    return () => {
-      mounted = false;
-    };
-
-  }, [user]);
-
-  /* calendar highlight dates */
   const journalDates = useMemo(() => {
 
     return [
@@ -64,84 +61,52 @@ export default function Journal() {
 
   }, [journals]);
 
-  /* update journal when date changes */
-  useEffect(() => {
+  const journalsForDay = useMemo(() => {
 
     const dateStr = formatDate(selectedDate);
 
-    const journal = journals.find(j => {
-
-      if (!j?.createdAt) return false;
-
-      const jDate = formatDate(j.createdAt);
-
-      return jDate === dateStr;
-
-    });
-
-    if (journal) {
-
-      setSelectedJournal(journal.text);
-      setViewMode(true);
-
-    } else {
-
-      setSelectedJournal("");
-      setViewMode(false);
-
-    }
+    return journals
+      .filter(j => formatDate(j.createdAt) === dateStr)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   }, [selectedDate, journals]);
 
+  const todayStr = formatDate(normalizeDate(new Date()));
+  const selectedStr = formatDate(normalizeDate(selectedDate));
+
+  const allowWriting = selectedStr === todayStr;
+
   return (
-    <div className="min-h-screen bg-background py-6 px-4">
+    <div className="h-[calc(100vh-64px)] bg-background px-4 md:px-6 py-6 flex flex-col">
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto flex flex-col flex-1 w-full">
 
-        {/* Page Header */}
-        <div className="mb-6">
+        <div className="mb-4">
 
-          <h1 className="text-xl font-semibold text-textPrimary">
+          <h1 className="text-2xl md:text-3xl font-semibold text-textPrimary">
             Your Journal
           </h1>
 
           <p className="text-sm text-textSecondary">
-            Select a date to view or continue writing your reflection.
+            Reflect on your thoughts and revisit past entries.
           </p>
 
         </div>
 
-        {/* Main Responsive Layout */}
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 grid gap-6 lg:grid-cols-[1fr_300px] overflow-hidden">
 
-          {/* Journal Section */}
-          <div className="flex-1 space-y-3">
-
-            <p className="text-sm text-textSecondary">
-              Viewing entry for {selectedDate.toDateString()}
-            </p>
-
-            {viewMode && (
-              <button
-                onClick={() => {
-                  setSelectedJournal("");
-                  setViewMode(false);
-                }}
-                className="text-sm text-primary hover:underline"
-              >
-                Write New Journal
-              </button>
-            )}
+          <div className="flex flex-col overflow-hidden">
 
             <JournalBook
-  initialText={selectedJournal}
-  readOnly={viewMode}
-/>
+              journals={journalsForDay}
+              allowWriting={allowWriting}
+              selectedDate={selectedDate}
+              refreshJournals={loadJournals}
+            />
 
           </div>
 
-          {/* Calendar */}
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div className="hidden lg:block">
 
             <JournalCalendar
               selectedDate={selectedDate}

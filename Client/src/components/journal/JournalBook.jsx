@@ -1,159 +1,81 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import JournalPage from "./JournalPage";
 import { useApp } from "../../context/AppContext";
 
-const MAX_LINES = 15;
-const APPROX_CHARS_PER_LINE = 60;
+const MAX_CHAR = 500;
 
-export default function JournalBook({ initialText = "", readOnly = false }) {
+export default function JournalBook({
+  journals = [],
+  allowWriting,
+  selectedDate,
+  refreshJournals,
+  onWriteModeChange
+}) {
 
   const { createJournal } = useApp();
 
   const [journalText, setJournalText] = useState(
-    initialText ||
-    (typeof window !== "undefined"
+    typeof window !== "undefined"
       ? localStorage.getItem("saathi_journal") || ""
-      : "")
+      : ""
   );
 
-  const [pageIndex, setPageIndex] = useState(0);
+  const [entryIndex, setEntryIndex] = useState(0);
+  const [writeMode, setWriteMode] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  /* autosave draft (disabled in view mode) */
+  const totalEntries = journals.length;
+
+  useEffect(() => {
+    setWriteMode(false)
+  }, [selectedDate])
+
+  useEffect(() => {
+    if (journals.length > 0) {
+      setEntryIndex(0)
+    }
+  }, [journals])
+
+  useEffect(() => {
+    if (onWriteModeChange) {
+      onWriteModeChange(writeMode);
+    }
+  }, [writeMode, onWriteModeChange]);
+
+  const currentEntry = journals[entryIndex];
+
   useEffect(() => {
 
-    if (readOnly) return;
+    if (!writeMode) return;
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem("saathi_journal", journalText);
-    }
+    localStorage.setItem("saathi_journal", journalText);
 
-  }, [journalText, readOnly]);
-
-  /* update text when date changes */
-  useEffect(() => {
-
-    if (initialText !== undefined) {
-
-      setJournalText(initialText);
-      setPageIndex(0);
-
-    }
-
-  }, [initialText]);
-
-  const pages = useMemo(() => {
-
-    const rawLines = journalText.split("\n");
-    const visualLines = [];
-
-    rawLines.forEach(line => {
-
-      if (line === "") {
-        visualLines.push("");
-        return;
-      }
-
-      let start = 0;
-
-      while (start < line.length) {
-
-        visualLines.push(
-          line.slice(start, start + APPROX_CHARS_PER_LINE)
-        );
-
-        start += APPROX_CHARS_PER_LINE;
-
-      }
-
-    });
-
-    const result = [];
-
-    for (let i = 0; i < visualLines.length; i += MAX_LINES) {
-
-      result.push(
-        visualLines.slice(i, i + MAX_LINES).join("\n")
-      );
-
-    }
-
-    if (result.length === 0) result.push("");
-
-    return result;
-
-  }, [journalText]);
-
-  /* prevent invalid page index */
-  useEffect(() => {
-
-    if (pageIndex > pages.length - 1) {
-      setPageIndex(pages.length - 1);
-    }
-
-  }, [pages.length, pageIndex]);
-
-  const currentPage = pages[pageIndex] || "";
+  }, [journalText, writeMode]);
 
   const handleChange = (value) => {
 
-    if (readOnly) return;
-
-    const allPages = [...pages];
-    allPages[pageIndex] = value;
-
-    setJournalText(allPages.join("\n"));
+    if (value.length > MAX_CHAR) return;
+    setJournalText(value);
 
   };
 
-  /* keyboard navigation */
-  useEffect(() => {
+  const nextEntry = () => {
 
-    const handler = (e) => {
-
-      if (e.ctrlKey && e.key === "ArrowRight") {
-
-        if (pageIndex < pages.length - 1)
-          setPageIndex(p => p + 1);
-
-      }
-
-      if (e.ctrlKey && e.key === "ArrowLeft") {
-
-        if (pageIndex > 0)
-          setPageIndex(p => p - 1);
-
-      }
-
-    };
-
-    window.addEventListener("keydown", handler);
-
-    return () => window.removeEventListener("keydown", handler);
-
-  }, [pageIndex, pages.length]);
-
-  const nextPage = () => {
-
-    if (pageIndex < pages.length - 1) {
-      setPageIndex(pageIndex + 1);
+    if (entryIndex < totalEntries - 1) {
+      setEntryIndex(entryIndex + 1);
     }
 
   };
 
-  const prevPage = () => {
+  const prevEntry = () => {
 
-    if (pageIndex > 0) {
-      setPageIndex(pageIndex - 1);
+    if (entryIndex > 0) {
+      setEntryIndex(entryIndex - 1);
     }
 
   };
 
   const handleSubmit = async () => {
-
-    if (readOnly) {
-      alert("Journal already exists for this date.");
-      return;
-    }
 
     if (!journalText.trim()) {
       alert("Journal cannot be empty");
@@ -161,94 +83,171 @@ export default function JournalBook({ initialText = "", readOnly = false }) {
     }
 
     if (journalText.length < 20) {
-      alert("Write at least a few lines before submitting.");
+      alert("Write more before submitting.");
       return;
     }
 
     try {
 
-      const res = await createJournal(journalText);
+      setSaving(true);
 
-      console.log("Journal API response:", res);
+      await createJournal(journalText)
 
-      alert("Journal submitted successfully!");
+      setJournalText("")
+      localStorage.removeItem("saathi_journal")
 
-      setJournalText("");
-      setPageIndex(0);
+      await refreshJournals()
 
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("saathi_journal");
-      }
+      setEntryIndex(0)
+      setWriteMode(false)
+      setSaving(false)
 
     } catch (err) {
 
-      console.error("Journal submission failed:", err);
-      alert("Failed to submit journal");
+      console.error(err);
+      alert("Submission failed");
+      setSaving(false);
 
     }
 
   };
 
+  const dateLabel = new Date(selectedDate).toDateString();
+
+  const timeLabel =
+    currentEntry &&
+    new Date(currentEntry.createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6">
+    <div className="flex flex-col h-full space-y-4">
 
-      <div className="transition-all duration-300">
+      {!writeMode && currentEntry && (
 
+        <div className="bg-surface-elevated border border-borderColor rounded-xl p-4 shadow-soft">
+
+          <div className="flex items-center justify-between">
+
+            <span className="text-xs md:text-sm font-medium text-textPrimary">
+              {dateLabel}
+            </span>
+
+            <span className="text-xs text-textSecondary">
+              {timeLabel}
+            </span>
+
+          </div>
+
+        </div>
+
+      )}
+
+      <div
+        className={`
+        flex-1
+        transition-all duration-300 ease-out
+        ${writeMode ? "scale-[1.01] shadow-elevated" : ""}
+        `}
+      >
         <JournalPage
-          value={currentPage}
+          value={
+            writeMode
+              ? journalText
+              : currentEntry
+              ? currentEntry.text
+              : journalText
+          }
           onChange={(e) => handleChange(e.target.value)}
-          readOnly={readOnly}
+          readOnly={!writeMode}
         />
-
       </div>
 
-      <div className="flex justify-between items-center">
+      {!writeMode && totalEntries > 0 && (
 
-        <button
-          onClick={prevPage}
-          disabled={pageIndex === 0}
-          className="
-          px-4 py-2 border border-borderColor rounded-md
-          text-textSecondary disabled:opacity-40
-          "
-        >
-          Previous
-        </button>
-
-        <span className="text-sm text-textSecondary">
-          Page {pageIndex + 1} / {pages.length}
-        </span>
-
-        <button
-          onClick={nextPage}
-          disabled={pageIndex === pages.length - 1}
-          className="
-          px-4 py-2 border border-borderColor rounded-md
-          text-textSecondary disabled:opacity-40
-          "
-        >
-          Next
-        </button>
-
-      </div>
-
-      {!readOnly && (
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
 
           <button
-            onClick={handleSubmit}
-            className="
-            px-6 py-2 rounded-md bg-primary text-white
-            shadow-soft hover:opacity-90
-            "
+            onClick={prevEntry}
+            disabled={entryIndex === 0}
+            className="px-4 py-2 border border-borderColor rounded-md text-sm text-textSecondary hover:bg-surface-elevated transition-all disabled:opacity-40"
           >
-            Submit Journal
+            Previous
+          </button>
+
+          <span className="text-sm font-medium tracking-wide text-textSecondary">
+            Entry {entryIndex + 1} of {totalEntries}
+          </span>
+
+          <button
+            onClick={nextEntry}
+            disabled={entryIndex === totalEntries - 1}
+            className="px-4 py-2 border border-borderColor rounded-md text-sm text-textSecondary hover:bg-surface-elevated transition-all disabled:opacity-40"
+          >
+            Next
           </button>
 
         </div>
+
+      )}
+
+      {!writeMode && (
+
+  <div className="flex justify-end">
+
+    <button
+      onClick={() => {
+        if (!allowWriting) {
+          alert("You can only write today's journal.");
+          return;
+        }
+        setWriteMode(true);
+      }}
+      className="
+      px-5 py-2 rounded-md
+      bg-primary text-white font-medium
+      shadow-soft
+      hover:bg-primary-hover
+      active:scale-[0.97]
+      transition-all
+      "
+    >
+      Write Journal
+    </button>
+
+  </div>
+
+)}
+
+      {writeMode && (
+
+        <div className="flex items-center justify-between">
+
+          <span className="text-xs md:text-sm text-textSecondary">
+            {journalText.length} / {MAX_CHAR}
+          </span>
+
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="
+            px-6 py-2 rounded-md
+            bg-primary text-white font-medium
+            shadow-soft
+            hover:bg-primary-hover
+            active:scale-[0.97]
+            transition-all
+            disabled:opacity-60
+            "
+          >
+            {saving ? "Saving..." : "Submit Journal"}
+          </button>
+
+        </div>
+
       )}
 
     </div>
   );
-
 }
