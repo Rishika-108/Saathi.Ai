@@ -1,4 +1,5 @@
 import PeerRequest from "../model/PeerRequestModel.js";
+import { generateRoomId } from "../utils/room.js";
 
 export const selectPeer = async (req, res) => {
   try {
@@ -22,9 +23,11 @@ export const selectPeer = async (req, res) => {
 
       reverse.status = "matched";
       await reverse.save();
+      const roomId = generateRoomId(fromUser, targetUserId);
 
       return res.json({
         matched: true,
+        roomId,
         users: [fromUser, targetUserId],
         message: "Mutual match!"
       });
