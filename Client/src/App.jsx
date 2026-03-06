@@ -4,6 +4,8 @@ import { AppProvider } from "./context/AppContext";
 
 import Navbar from "./components/Navbar";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import Home from "./pages/Home";
 import Journal from "./pages/Journal";
 import Dashboard from "./pages/Dashboard";
@@ -21,9 +23,33 @@ function App() {
 
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/feeds" element={<Feeds />} />
+            
+            <Route 
+              path="/journal" 
+              element={
+                <ProtectedRoute>
+                  <Journal />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/feeds" 
+              element={
+                <ProtectedRoute>
+                  <Feeds />
+                </ProtectedRoute>
+              } 
+            />
           </Routes>
 
         </Router>
