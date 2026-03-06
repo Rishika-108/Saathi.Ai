@@ -36,6 +36,10 @@ const AnalysisSchema = new Schema({
     },
     model_version: String
 }, { _id: false })
+const InsightSchema = new Schema({
+  title: String,
+  narrative: String
+}, { _id: false })
 
 const JournalEntrySchema = new mongoose.Schema({
     userID : {type: Schema.Types.ObjectId, required: true, ref: 'user'},
@@ -44,6 +48,7 @@ const JournalEntrySchema = new mongoose.Schema({
         type: AnalysisSchema,
         required: true // change it to true, after checking that model gives output
     },
+    insight: InsightSchema,
     createdAt: {type: Date, default: Date.now}
 })
 JournalEntrySchema.index({ userID: 1, createdAt: -1 })
