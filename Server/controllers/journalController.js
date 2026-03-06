@@ -92,26 +92,6 @@ export async function updateUserTrajectory(userID) {
   }
 }
 
-// export const fetchPeerMatches = async (req, res) => {
-//   try {
-
-//     const userID = req.user.id;
-
-//     const matches = await getPeerMatches(userID, 3);
-
-//     return res.status(200).json({
-//       success: true,
-//       matches
-//     });
-
-//   } catch (error) {
-//     console.error("Error fetching peer matches:", error);
-//     return res.status(500).json({
-//       message: "Failed to fetch peer matches"
-//     });
-//   }
-// };
-
 export const fetchPeerMatches = async (req, res) => {
   try {
 
