@@ -227,7 +227,25 @@ export default function JournalBook({
       {!writeMode && (
 
   <div className="flex justify-end">
-
+  <button
+      onClick={() => {
+        if (!allowWriting) {
+          alert("You can only write today's journal.");
+          return;
+        }
+        setWriteMode(true);
+      }}
+      className="
+      px-5 py-2 rounded-md
+      bg-primary text-white font-medium
+      shadow-soft
+      hover:bg-primary-hover
+      active:scale-[0.97]
+      transition-all
+      "
+    >
+      Aditya
+    </button>
     <button
       onClick={() => {
         if (!allowWriting) {
