@@ -129,6 +129,17 @@ export default function Navbar() {
                 </button>
 
                 <button
+                  onClick={() => navigate("/saathi")}
+                  className={`text-sm ${
+                    isActive("/saathi")
+                      ? "text-primary font-medium"
+                      : "text-textPrimary hover:text-primary"
+                  }`}
+                >
+                  Your Saathi
+                </button>
+
+                <button
                   onClick={() => navigate("/dashboard")}
                   className={`text-sm ${
                     isActive("/dashboard")
@@ -234,6 +245,13 @@ export default function Navbar() {
                   className="text-left text-textPrimary"
                 >
                   Journal
+                </button>
+
+                <button
+                  onClick={() => navigateAndClose("/saathi")}
+                  className="text-left text-textPrimary"
+                >
+                  Your Saathi
                 </button>
 
                 <button
