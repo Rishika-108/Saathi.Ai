@@ -8,10 +8,9 @@ export default function Navbar() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const { user, logout, toggleTheme, isDarkTheme, login } = useApp();
+  const { user, logout, toggleTheme, isDarkTheme, login, isAuthOpen, setIsAuthOpen } = useApp();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -128,16 +127,6 @@ export default function Navbar() {
                   Journal
                 </button>
 
-                <button
-                  onClick={() => navigate("/saathi")}
-                  className={`text-sm ${
-                    isActive("/saathi")
-                      ? "text-primary font-medium"
-                      : "text-textPrimary hover:text-primary"
-                  }`}
-                >
-                  Your Saathi
-                </button>
 
                 <button
                   onClick={() => navigate("/dashboard")}
@@ -148,6 +137,17 @@ export default function Navbar() {
                   }`}
                 >
                   Dashboard
+                </button>
+
+                <button
+                  onClick={() => navigate("/feeds")}
+                  className={`text-sm ${
+                    isActive("/feeds")
+                      ? "text-primary font-medium"
+                      : "text-textPrimary hover:text-primary"
+                  }`}
+                >
+                  Feeds
                 </button>
               </>
             )}
@@ -247,12 +247,6 @@ export default function Navbar() {
                   Journal
                 </button>
 
-                <button
-                  onClick={() => navigateAndClose("/saathi")}
-                  className="text-left text-textPrimary"
-                >
-                  Your Saathi
-                </button>
 
                 <button
                   onClick={() => navigateAndClose("/dashboard")}
@@ -260,12 +254,32 @@ export default function Navbar() {
                 >
                   Dashboard
                 </button>
+
+                <button
+                  onClick={() => navigateAndClose("/feeds")}
+                  className="text-left text-textPrimary py-2"
+                >
+                  Feeds
+                </button>
+                
+                <div className="border-t border-borderColor/50 pt-2 pb-1 mt-1">
+                  <div className="flex items-center gap-2 mb-3 text-sm text-textSecondary px-1">
+                     <FiUser size={14} />
+                     <span>Signed in as {user.name}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left text-error hover:text-error/80 py-2 font-medium"
+                  >
+                    Logout
+                  </button>
+                </div>
               </>
             )}
 
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-2 text-textPrimary"
+              className="flex items-center gap-2 text-textPrimary py-2 border-t border-borderColor/50 pt-3"
             >
               {isDarkTheme ? <FiSun /> : <FiMoon />}
               Theme

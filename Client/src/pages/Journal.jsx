@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import JournalBook from "../components/journal/JournalBook";
 import JournalCalendar from "../components/journal/JournalCalendar";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Journal() {
 
@@ -9,6 +10,7 @@ export default function Journal() {
 
   const [journals, setJournals] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
 
   const formatDate = (date) => {
     const d = new Date(date)
@@ -25,7 +27,7 @@ export default function Journal() {
   }
 
   const loadJournals = useCallback(async () => {
-
+    setLoading(true);
     try {
 
       const res = await getJournals();
@@ -38,6 +40,8 @@ export default function Journal() {
 
       console.error("Journal load error:", err);
 
+    } finally {
+      setLoading(false);
     }
 
   }, [getJournals]);
@@ -81,7 +85,11 @@ export default function Journal() {
 
       <div className="max-w-6xl mx-auto flex flex-col flex-1 w-full">
 
-        <div className="mb-4">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
 
           <h1 className="text-2xl md:text-3xl font-semibold text-textPrimary">
             Your Journal
@@ -91,22 +99,46 @@ export default function Journal() {
             Reflect on your thoughts and revisit past entries.
           </p>
 
-        </div>
+        </motion.div>
 
         <div className="flex-1 grid gap-6 lg:grid-cols-[1fr_300px] overflow-hidden">
+          
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div 
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center h-full bg-surface-elevated border border-borderColor rounded-xl shadow-soft"
+              >
+                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary border-opacity-30 border-t-primary mb-4"></div>
+                 <p className="text-textSecondary text-sm">Loading your journal...</p>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="content"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col overflow-hidden"
+              >
 
-          <div className="flex flex-col overflow-hidden">
+                <JournalBook
+                  journals={journalsForDay}
+                  allowWriting={allowWriting}
+                  selectedDate={selectedDate}
+                  refreshJournals={loadJournals}
+                />
 
-            <JournalBook
-              journals={journalsForDay}
-              allowWriting={allowWriting}
-              selectedDate={selectedDate}
-              refreshJournals={loadJournals}
-            />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          </div>
-
-          <div className="hidden lg:block">
+          <motion.div 
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden lg:block h-full"
+          >
 
             <JournalCalendar
               selectedDate={selectedDate}
@@ -114,7 +146,7 @@ export default function Journal() {
               journalDates={journalDates}
             />
 
-          </div>
+          </motion.div>
 
         </div>
 

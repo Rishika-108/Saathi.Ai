@@ -8,6 +8,8 @@ export const selectPeer = async (req, res) => {
   try {
     const fromUser = req.user.id;
     const { targetUserId } = req.body;
+    console.log("BODY:", req.body)
+console.log("USER:", req.user)
 
     if (fromUser === targetUserId) {
       return res.status(400).json({

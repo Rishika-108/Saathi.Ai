@@ -29,8 +29,6 @@ export const getUserTrajectory = async (req, res) => {
     });
   }
 };
-
-
 export const getUserAnalysis = async (req, res) => {
   try {
     const userId = req.user.id; // or req.params.userId
@@ -54,4 +52,7 @@ export const getUserAnalysis = async (req, res) => {
       message: "Failed to fetch analysis"
     });
   }
+};
+export const getUserPersonalityCard = async (req, res) => {
+    
 };

@@ -163,51 +163,111 @@ a {
   box-shadow: var(--shadow-md);
 }
 
-.has-journal {
-  background: var(--primary);
-  color: white !important;
-  border-radius: 6px;
-}
-/* highlight journal days */
-.journal-day {
-  background: rgba(99, 102, 241, 0.15);
-  border-radius: 6px;
-  font-weight: 500;
-}
-
-/* selected day */
-.react-calendar__tile--active {
-  background: var(--primary) !important;
-  color: white !important;
-  border-radius: 6px;
-}
-
-/* today highlight */
-.react-calendar__tile--now {
-  border: 1px solid var(--primary);
-  border-radius: 6px;
-}
-
-/* hover */
-.react-calendar__tile:hover {
-  background: rgba(0,0,0,0.05);
-}
 .react-calendar {
   width: 100% !important;
   background: transparent;
-  border: none;
+  border: none !important;
+  font-family: var(--font-primary);
+}
+
+/* Header Navigation */
+.react-calendar__navigation {
+  display: flex;
+  margin-bottom: 1rem;
 }
 
 .react-calendar__navigation button {
   color: var(--text-primary);
+  min-width: 44px;
+  background: none;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+  padding: 8px;
 }
 
+.react-calendar__navigation button:disabled {
+  opacity: 0.3;
+}
+
+.react-calendar__navigation button:enabled:hover {
+  background-color: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* Weekdays */
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+}
+
+/* Day Tiles */
 .react-calendar__tile {
-  border-radius: 6px;
-  padding: 0.6rem 0;
+  border-radius: 8px;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.875rem;
+  background: none;
+  color: var(--text-primary);
+  transition: all 0.2s;
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.react-calendar__tile--active {
+/* Disabled Days (future or no journal) */
+.react-calendar__tile:disabled {
+  color: var(--text-muted);
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.react-calendar__tile:enabled:hover {
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+/* Single Day Highlights */
+.react-calendar__tile--now {
+  background-color: transparent !important;
+  border: 1px solid var(--primary);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.react-calendar__tile--active,
+.react-calendar__tile--active:enabled:hover {
   background: var(--primary) !important;
   color: white !important;
+  box-shadow: 0 4px 12px var(--primary-soft);
+  transform: scale(1.05);
+}
+
+.react-calendar__tile--active.react-calendar__tile--now {
+  border: 1px solid white;
+}
+
+/* Journal Activity Indicator */
+.journal-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  transition: background-color 0.2s;
+}
+
+.react-calendar__tile--active .journal-indicator {
+  background-color: white;
 }

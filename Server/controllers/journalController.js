@@ -94,6 +94,7 @@ export async function updateUserTrajectory(userID) {
 }
 
 //const [sent, setSent] = useState(match.requestStatus === "pending");
+//Find Peers - maybe later
 export const fetchPeerMatches = async (req, res) => {
   try {
 

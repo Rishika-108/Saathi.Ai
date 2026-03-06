@@ -28,7 +28,7 @@ export default function AIInsight({ trajectory, latest }) {
   }
 
   return (
-    <div className="surface-elevated shadow-soft rounded-lg p-6 ">
+    <div className="surface-elevated shadow-soft rounded-lg p-6 md:col-span-2">
 
       <h2 className="text-xl font-semibold mb-3">
         AI Emotional Insight

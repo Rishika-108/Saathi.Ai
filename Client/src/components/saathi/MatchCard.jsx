@@ -9,29 +9,32 @@ export default function MatchCard({ match }) {
 
   const connect = async () => {
 
-    setLoading(true);
+  setLoading(true);
 
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    const res = await fetch(`${API}/peers/select`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        targetUserId: match.user_id
-      })
-    });
+  const res = await fetch(`${API}/peers/select`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      targetUserId: match.user_id
+    })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    setLoading(false);
+  setLoading(false);
 
-    if (!data.matched) {
-      setSent(true);
-    }
-  };
+  if (data.matched) {
+    localStorage.setItem("roomId", data.roomId);
+    window.location.reload();
+  } else {
+    setSent(true);
+  }
+};
 
   return (
     <div className="surface-elevated border border-borderColor rounded-lg p-6 shadow-soft">
@@ -57,12 +60,10 @@ export default function MatchCard({ match }) {
       </p>
 
       {sent ? (
-
-        <p className="text-success font-medium">
-          Request Sent ✓ Waiting for response
-        </p>
-
-      ) : (
+  <p className="text-success font-medium animate-pulse">
+    Request Sent ✓ Waiting for response
+  </p>
+) : (
 
         <button
           onClick={connect}
