@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import JournalModel from "../model/journalModel.js";
 
 // Get Feed of personality cards of all users in the DB
@@ -51,10 +52,10 @@ export const getIndividualPersonalityCard = async (req, res) => {
 
   try {
 
-    const { userId } = req.params
+    const { id } = req.params
 
     const journal = await JournalModel
-      .findOne({ userID: userId })
+      .findOne({ userID: id })
       .sort({ createdAt: -1 })
       .populate("userID", "name")
       .lean()
