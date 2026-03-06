@@ -1,4 +1,7 @@
 import PeerRequest from "../model/PeerRequestModel.js";
+import userModel from "../model/userModel.js";
+import { generateAlias } from "../utils/aliasGenerator.js";
+import { generateMatchReason } from "../utils/matchReason.js";
 import { generateRoomId } from "../utils/room.js";
 
 export const selectPeer = async (req, res) => {
@@ -28,20 +31,26 @@ export const selectPeer = async (req, res) => {
       
 
       return res.json({
+        success: true,
+        status: "matched",
         matched: true,
         roomId,
         users: [fromUser, targetUserId],
-        message: "Mutual match!"
+        message: "Mutual match!",
+
       });
     }
 
     // create pending request
     await PeerRequest.create({
       fromUser,
-      toUser: targetUserId
+      toUser: targetUserId,
+      status: "pending"
     });
 
     return res.json({
+      success: true,
+      status: request.status,
       matched: false,
       message: "Request sent. Waiting for other user."
     });
@@ -61,10 +70,11 @@ export const declinePeer = async (req, res) => {
 
     await PeerRequest.findOneAndUpdate(
       { fromUser: targetUserId, toUser: userId },
-      { status: "declined" }
+      { status: "declined" },
+      { new: true }
     );
 
-    res.json({ success: true });
+    res.json({ success: true, status: request?.status});
 
   } catch (error) {
     res.status(500).json({ message: "Decline failed" });
@@ -81,13 +91,61 @@ export const getIncomingRequests = async (req, res) => {
       status: "pending"
     }).select("fromUser createdAt");
 
+    if (!requests.length) {
+      return res.json({
+        success: true,
+        requests: []
+      });
+    }
+
+    const userIds = requests.map(r => r.fromUser);
+
+    const users = await userModel.find(
+      { _id: { $in: userIds } },
+      { trajectory: 1 }
+    ).lean();
+
+    const userMap = {};
+    users.forEach(u => {
+      userMap[u._id.toString()] = u;
+    });
+
+    const enrichedRequests = requests.map(reqItem => {
+
+      const user = userMap[reqItem.fromUser.toString()];
+      const dominantEmotion = user?.trajectory?.dominant_emotion;
+
+      const reason = generateMatchReason(
+        null, // no breakdown available
+        dominantEmotion
+      );
+
+      return {
+        request_id: reqItem._id,
+        user_id: reqItem.fromUser,
+
+        alias: generateAlias(),
+
+        dominant_emotion: dominantEmotion,
+        stability_score: user?.trajectory?.stability_score,
+
+        reason,
+
+        createdAt: reqItem.createdAt
+      };
+    });
+
     res.json({
       success: true,
-      requests
+      requests: enrichedRequests
     });
 
   } catch (error) {
+
+    console.error("Error fetching incoming requests:", error);
+
     res.status(500).json({
+      success: false,
       message: "Failed to fetch incoming requests"
     });
   }
