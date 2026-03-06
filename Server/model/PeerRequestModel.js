@@ -11,6 +11,10 @@ const peerRequestSchema = new mongoose.Schema({
     ref: "user",
     required: true
   },
+  roomId: {
+    type: String,
+    unique: true
+  },
   status: {
     type: String,
     enum: ["pending", "matched", "declined"],

@@ -20,10 +20,12 @@ export const selectPeer = async (req, res) => {
     });
 
     if (reverse) {
-
-      reverse.status = "matched";
-      await reverse.save();
       const roomId = generateRoomId(fromUser, targetUserId);
+      reverse.status = "matched";
+      reverse.roomId = roomId;
+      await reverse.save();
+      
+      
 
       return res.json({
         matched: true,

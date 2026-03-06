@@ -3,6 +3,8 @@ export const userToRoom = new Map()
 
 export const createSession = (roomId, userA, userB) => {
 
+    if(activeChats.has(roomId)) return
+
     activeChats.set(roomId, {
         users: [userA, userB],
         messages: [],
@@ -12,7 +14,6 @@ export const createSession = (roomId, userA, userB) => {
 
     userToRoom.set(userA, roomId)
     userToRoom.set(userB, roomId)
-
 }
 
 export const endSession = (roomId) => {
@@ -21,7 +22,7 @@ export const endSession = (roomId) => {
 
     if(!session) return
 
-    session.users.forEach(user=>{
+    session.users?.forEach(user=>{
         userToRoom.delete(user)
     })
 

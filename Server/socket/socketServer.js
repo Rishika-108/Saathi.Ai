@@ -1,3 +1,4 @@
+import PeerRequest from "../model/PeerRequestModel.js"
 import { activeChats, userToRoom, createSession, endSession } from "./sessionManager.js"
 
 const MAX_MESSAGES = 30
@@ -5,69 +6,96 @@ const MAX_DURATION = 15 * 60 * 1000
 
 export default function socketServer(io){
 
-    io.on("connection",(socket)=>{
+  io.on("connection",(socket)=>{
 
-        console.log("User connected:", socket.id)
+    console.log("User connected:", socket.id)
 
-        // Join room after match
-        socket.on("join_chat",(data)=>{
+    socket.on("join_chat", async ({ userId }) => {
 
-            const { userId, peerId, roomId } = data
+      try {
 
-            // prevent multiple sessions
-            if(userToRoom.has(userId)){
-                socket.emit("error","User already in chat")
-                return
-            }
-
-            createSession(roomId, userId, peerId)
-
-            socket.join(roomId)
-
-            socket.emit("joined_room", roomId)
-
-            console.log(`User ${userId} joined ${roomId}`)
-
-            // auto end session after time
-            setTimeout(()=>{
-                io.to(roomId).emit("chat_ended")
-                endSession(roomId)
-            }, MAX_DURATION)
-
+        const match = await PeerRequest.findOne({
+          $or: [
+            { fromUser: userId },
+            { toUser: userId }
+          ],
+          status: "matched"
         })
 
+        if(!match){
+          socket.emit("error","No active match found")
+          return
+        }
 
-        socket.on("send_message",(data)=>{
+        const roomId = match.roomId
 
-            const { roomId, userId, message } = data
+        const users = [
+          match.fromUser.toString(),
+          match.toUser.toString()
+        ]
 
-            const session = activeChats.get(roomId)
+        if(userToRoom.has(users[0]) || userToRoom.has(users[1])){
+          socket.emit("error","User already in chat")
+          return
+        }
 
-            if(!session) return
+        if(!activeChats.has(roomId)){
+          createSession(roomId, users[0], users[1])
+        }
 
-            session.messages.push({ userId, message })
-            session.messageCount++
+        socket.join(roomId)
 
-            io.to(roomId).emit("receive_message",{
-                userId,
-                message
-            })
+        socket.emit("joined_room", roomId)
 
-            // message limit
-            if(session.messageCount >= MAX_MESSAGES){
+        console.log(`Users joined room ${roomId}`)
 
-                io.to(roomId).emit("chat_ended")
+        const roomSize = io.sockets.adapter.rooms.get(roomId)?.size || 0
 
-                endSession(roomId)
-            }
+        if(roomSize === 2){
 
-        })
+          console.log(`Chat session started: ${roomId}`)
 
+          setTimeout(()=>{
+            io.to(roomId).emit("chat_ended")
+            endSession(roomId)
+          }, MAX_DURATION)
 
-        socket.on("disconnect",()=>{
-            console.log("User disconnected:", socket.id)
-        })
+        }
+
+      } catch(err){
+        console.error(err)
+        socket.emit("error","Join failed")
+      }
 
     })
+
+    socket.on("send_message",(data)=>{
+
+      const { roomId, userId, message } = data
+
+      const session = activeChats.get(roomId)
+
+      if(!session) return
+
+      session.messages.push({ userId, message })
+      session.messageCount++
+
+      io.to(roomId).emit("receive_message",{
+        userId,
+        message
+      })
+
+      if(session.messageCount >= MAX_MESSAGES){
+        io.to(roomId).emit("chat_ended")
+        endSession(roomId)
+      }
+
+    })
+
+    socket.on("disconnect",()=>{
+      console.log("User disconnected:", socket.id)
+    })
+
+  })
 
 }
