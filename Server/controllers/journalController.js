@@ -4,6 +4,7 @@ import JournalModel from "../model/journalModel.js";
 import { getPeerMatches } from "../utils/service.js";
 import { generateAlias } from "../utils/aliasGenerator.js";
 import { generateMatchReason } from "../utils/matchReason.js";
+import PeerRequest from "../model/peerRequestModel.js";
 import axios from "axios";
 
 const createJournalEntry = async (req, res) => {
@@ -92,6 +93,7 @@ export async function updateUserTrajectory(userID) {
   }
 }
 
+//const [sent, setSent] = useState(match.requestStatus === "pending");
 export const fetchPeerMatches = async (req, res) => {
   try {
 
@@ -107,6 +109,25 @@ export const fetchPeerMatches = async (req, res) => {
     }
 
     const matchIDs = matches.map(m => m.user_id);
+    const existingRequests = await PeerRequest.find({
+    $or: [
+    { fromUser: userID, toUser: { $in: matchIDs } },
+    { fromUser: { $in: matchIDs }, toUser: userID }
+  ]
+}).lean();
+
+const requestMap = {};
+
+existingRequests.forEach(req => {
+
+  const otherUser =
+    req.fromUser.toString() === userID
+      ? req.toUser.toString()
+      : req.fromUser.toString();
+
+  requestMap[otherUser] = req.status;
+
+});
 
     const users = await userModel.find(
       { _id: { $in: matchIDs } },
@@ -146,7 +167,8 @@ export const fetchPeerMatches = async (req, res) => {
         dominant_emotion: dominantEmotion,
         stability_score: user?.trajectory?.stability_score,
 
-        reason
+        reason,
+        requestStatus: requestMap[match.user_id] || null
       };
 
     });
