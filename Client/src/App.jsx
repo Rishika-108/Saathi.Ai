@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
-
+import { Toaster } from "react-hot-toast";
 import { AppProvider } from "./context/AppContext";
 
 import Navbar from "./components/Navbar";
@@ -15,9 +14,8 @@ import "./styles/global.css";
 
 function App() {
   return (
-    <ChakraProvider value={defaultSystem}>
       <AppProvider>
-
+        <Toaster position="top-right" />
         <Router>
 
           <Navbar />
@@ -33,7 +31,6 @@ function App() {
         </Router>
 
       </AppProvider>
-    </ChakraProvider>
   );
 }
 
