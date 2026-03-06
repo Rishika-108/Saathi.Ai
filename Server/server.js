@@ -12,7 +12,7 @@ import http from "http"
 import { Server } from "socket.io"
 import socketServer from "../Server/socket/socketServer.js";
 import feedRouter from "./routes/feedRoute.js";
-dotenv.config();
+dotenv.config(); 
 
 const app = express();
 const server = http.createServer(app);
