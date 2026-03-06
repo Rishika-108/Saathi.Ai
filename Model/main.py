@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from journal_engine import analyze_journal
 from trajectory_engine import build_weighted_trajectory
 from peer_matching_engine import compute_match, top_n_matches, simulate_users
+from chat_safety_engine import ChatSafetyEngine
 
 past_entries = []  # list of past journal analyses
 user_pool = simulate_users(num_users=7)  # simulate 7 other users locally
@@ -18,7 +19,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+chat_engine = ChatSafetyEngine()
+
 class JournalInput(BaseModel): 
+    text: str
+
+
+class ChatMessage(BaseModel):
     text: str
 
 # API ENDPOINT
@@ -120,3 +127,14 @@ def matching(input: MatchingInput):
     return {
         "matches": scores[:n]
     }     
+
+
+@app.post("/chat/analyze")
+def analyze_chat(message: ChatMessage):
+
+    result = chat_engine.analyze_message(message.text)
+
+    return {
+        "stage": "chat_analysis",
+        "analysis": result
+    }
