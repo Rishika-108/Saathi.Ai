@@ -14,6 +14,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   });
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+  function parseJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
+
+  return JSON.parse(jsonPayload);
+}
+
   /* Lock Scroll */
   useEffect(() => {
   document.body.style.overflow = isOpen ? "hidden" : "auto";
@@ -34,7 +47,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   e.preventDefault();
 
-  let token = null;
+ let token = null;
+let data = null;
 
   try {
 
@@ -73,8 +87,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }
 
     if (data?.token) {
-      token = data.token;
-    }
+  token = data.token;
+
+  const decoded = parseJwt(token);
+  const userId = decoded.id;
+
+  localStorage.setItem("userId", userId);
+}
 
   } catch (err) {
 
@@ -83,14 +102,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   }
 
-  const userData = {
-    name:
-      authMode === "register"
-        ? formData.name || "User"
-        : "User",
-    email: formData.email,
-    isLoggedIn: true,
-  };
+const userData = {
+  email: formData.email,
+  id: localStorage.getItem("userId"),
+  isLoggedIn: true,
+};
 
   onAuthSuccess(userData, token);
 

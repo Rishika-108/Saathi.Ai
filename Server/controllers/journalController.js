@@ -4,7 +4,7 @@ import JournalModel from "../model/journalModel.js";
 import { getPeerMatches } from "../utils/service.js";
 import { generateAlias } from "../utils/aliasGenerator.js";
 import { generateMatchReason } from "../utils/matchReason.js";
-import PeerRequestModel from "../model/peerRequestModel.js";
+import PeerRequest from "../model/peerRequestModel.js";
 import axios from "axios";
 
 const createJournalEntry = async (req, res) => {

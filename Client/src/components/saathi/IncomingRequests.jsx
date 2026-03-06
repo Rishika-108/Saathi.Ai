@@ -8,24 +8,33 @@ export default function IncomingRequests({ requests, refresh }) {
 
   const acceptRequest = async (userId) => {
 
-    setLoadingId(userId);
+  setLoadingId(userId);
 
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    await fetch(`${API}/peers/select`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        targetUserId: userId
-      })
-    });
+  const res = await fetch(`${API}/peers/select`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      targetUserId: userId
+    })
+  });
 
-    setLoadingId(null);
-    refresh();
-  };
+  const data = await res.json();
+
+  setLoadingId(null);
+
+  if (data.matched) {
+    localStorage.setItem("roomId", data.roomId);
+    window.location.reload();
+    return;
+  }
+
+  refresh();
+};
 
   const declineRequest = async (userId) => {
 
@@ -75,16 +84,16 @@ export default function IncomingRequests({ requests, refresh }) {
           <div className="flex gap-3">
 
             <button
-              onClick={() => acceptRequest(req.fromUser)}
-              disabled={loadingId === req.fromUser}
+              onClick={() => acceptRequest(req.user_id)}
+              disabled={loadingId === req.user_id}
               className="px-4 py-2 bg-primary text-white rounded-md hover:opacity-90"
             >
               Accept
             </button>
 
             <button
-              onClick={() => declineRequest(req.fromUser)}
-              disabled={loadingId === req.fromUser}
+              onClick={() => declineRequest(req.user_id)}
+              disabled={loadingId === req.user_id}
               className="px-4 py-2 border border-borderColor rounded-md"
             >
               Decline

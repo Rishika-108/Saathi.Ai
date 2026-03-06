@@ -1,21 +1,24 @@
 export default function ReflectionHeatmap({ journals = [] }) {
   const dayCounts = {};
 
-  // count journals per day
+  // count journals per day using local date safely
   journals.forEach((j) => {
-    const date = new Date(j.createdAt).toISOString().slice(0, 10);
+    const d = new Date(j.createdAt);
+    // Adjust to local date string to avoid timezone offset issues (e.g if created at night)
+    const date = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
     dayCounts[date] = (dayCounts[date] || 0) + 1;
   });
 
   // generate last 28 days
   const days = [];
-
+  const today = new Date();
+  
   for (let i = 27; i >= 0; i--) {
-    const d = new Date();
+    const d = new Date(today);
     d.setDate(d.getDate() - i);
-
-    const key = d.toISOString().slice(0, 10);
+    // Map same local offset
+    const key = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
     days.push({
       date: key,
@@ -43,24 +46,21 @@ export default function ReflectionHeatmap({ journals = [] }) {
 
       <div className="grid grid-cols-7 gap-2">
         {days.map(({ date, count }) => {
-          let color =
-            "bg-surface border border-borderColor text-text-secondary";
+          let color = "bg-surface border border-borderColor text-text-secondary";
 
-          if (count === 1)
-            color =
-              "bg-primary-soft border border-borderColor text-text-primary";
+          if (count === 1) {
+            color = "bg-primary-soft border border-primary-soft text-primary";
+          } else if (count === 2) {
+            color = "bg-primary/60 border border-primary/60 text-white";
+          } else if (count >= 3) {
+            color = "bg-primary border border-primary text-white";
+          }
 
-          if (count === 2)
-            color = "bg-primary/70 border border-primary/80 text-white";
-
-          if (count >= 3) color = "bg-primary border border-primary text-white";
           return (
             <div
               key={date}
               title={`${date} — ${count} reflection${count !== 1 ? "s" : ""}`}
-              className={`aspect-square rounded-md flex items-center justify-center text-[10px] font-semibold
-  transition transform hover:scale-105 hover:shadow-soft
-  ${color}`}
+              className={`aspect-square rounded-md flex items-center justify-center text-[10px] sm:text-xs font-medium transition-all duration-200 transform hover:scale-110 hover:shadow-soft cursor-pointer ${color}`}
             >
               {count > 0 ? count : ""}
             </div>
@@ -71,10 +71,10 @@ export default function ReflectionHeatmap({ journals = [] }) {
       <div className="flex items-center gap-2 mt-4 text-xs text-text-secondary">
         <span>Less</span>
 
-        <div className="w-3 h-3 rounded bg-surface border border-borderColor"></div>
-        <div className="w-3 h-3 rounded bg-primary-soft"></div>
-        <div className="w-3 h-3 rounded bg-primary/60"></div>
-        <div className="w-3 h-3 rounded bg-primary"></div>
+        <div className="w-3 h-3 rounded-sm bg-surface border border-borderColor"></div>
+        <div className="w-3 h-3 rounded-sm bg-primary-soft border border-primary-soft"></div>
+        <div className="w-3 h-3 rounded-sm bg-primary/60 border border-primary/60"></div>
+        <div className="w-3 h-3 rounded-sm bg-primary border border-primary"></div>
 
         <span>More</span>
       </div>

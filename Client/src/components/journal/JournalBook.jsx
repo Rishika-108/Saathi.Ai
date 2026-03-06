@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiBookOpen } from "react-icons/fi";
 import JournalPage from "./JournalPage";
 import { useApp } from "../../context/AppContext";
 
@@ -146,22 +148,52 @@ export default function JournalBook({
 
       <div
         className={`
-        flex-1
-        transition-all duration-300 ease-out
-        ${writeMode ? "scale-[1.01] shadow-elevated" : ""}
+        flex-1 flex flex-col min-h-[300px] relative
+        transition-all duration-300 ease-out rounded-xl
+        ${writeMode ? "scale-[1.01] shadow-elevated z-10" : "z-0"}
         `}
       >
-        <JournalPage
-          value={
-            writeMode
-              ? journalText
-              : currentEntry
-              ? currentEntry.text
-              : journalText
-          }
-          onChange={(e) => handleChange(e.target.value)}
-          readOnly={!writeMode}
-        />
+        <AnimatePresence mode="wait">
+          {!writeMode && currentEntry === undefined ? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 flex flex-col items-center justify-center bg-surface-elevated border border-borderColor rounded-xl shadow-soft text-center p-8"
+            >
+              <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+                <FiBookOpen size={28} />
+              </div>
+              <h3 className="text-lg font-semibold text-textPrimary mb-2">No Entries Yet</h3>
+              <p className="text-textSecondary text-sm max-w-xs">
+                {allowWriting 
+                  ? "You haven't written a reflection for today. Take a moment to capture your thoughts." 
+                  : "There are no journal entries recorded on this date."}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="editor"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex flex-col bg-surface-elevated rounded-xl shadow-soft border border-borderColor p-2"
+            >
+              <JournalPage
+                value={
+                  writeMode
+                    ? journalText
+                    : currentEntry
+                    ? currentEntry.text
+                    : ""
+                }
+                onChange={(e) => handleChange(e.target.value)}
+                readOnly={!writeMode}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {!writeMode && totalEntries > 0 && (
