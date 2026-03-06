@@ -8,12 +8,17 @@ export default function JournalPage({ value, onChange, readOnly = false }) {
   return (
     <div
       className="
-      relative bg-surface border border-borderColor rounded-lg shadow-soft
-      w-full h-[540px] overflow-hidden transition-all duration-300
+      relative
+      bg-surface
+      border border-borderColor
+      rounded-xl
+      shadow-soft
+      w-full
+      h-full
+      transition-all duration-300 ease-out
       "
     >
 
-      {/* notebook margin */}
       <div
         className="absolute left-[56px] top-0 bottom-0 w-[2px]"
         style={{ background: "var(--border)" }}
@@ -26,11 +31,13 @@ export default function JournalPage({ value, onChange, readOnly = false }) {
         placeholder="Start writing your thoughts..."
         className="
         w-full h-full resize-none bg-transparent outline-none
-        text-textPrimary
-        pl-[72px] pr-8 pb-8 overflow-hidden
-        focus:ring-0
-        
+        text-textPrimary text-[15px] leading-relaxed
+        pl-[72px] pr-8 pb-8
+        overflow-y-auto
+        caret-primary
+        focus-visible:ring-2 focus-visible:ring-primary-soft
         "
+        spellCheck="true"
         style={{
           lineHeight: `${lineHeight}px`,
           paddingTop: `${topPadding}px`,

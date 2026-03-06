@@ -1,9 +1,6 @@
 import numpy as np
 import random
 
-# -----------------------------
-# CORE MATCHING FUNCTIONS
-# -----------------------------
 def cosine_similarity(vec1, vec2):
     v1 = np.array(list(vec1.values()))
     v2 = np.array(list(vec2.values()))
@@ -18,6 +15,9 @@ def stability_alignment(s1, s2):
 
 def sentiment_alignment(s1, s2):
     return float(1 - abs(s1 - s2))
+# def sentiment_alignment(s1, s2):
+#     score = 1 - abs(s1 - s2) / 2
+#     return max(0.0, float(score))
 
 def risk_alignment(r1, r2):
     if r1 > 0.75 or r2 > 0.75:  # safety override
