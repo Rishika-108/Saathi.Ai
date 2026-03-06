@@ -7,11 +7,9 @@ export default function JournalCalendar({
 }) {
 
   const formatDate = (date) => {
-    const d = new Date(date)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, "0")
-    const day = String(d.getDate()).padStart(2, "0")
-    return `${year}-${month}-${day}`
+    // using localized timezone to match the heat map fixes
+    const d = new Date(date);
+    return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
   }
 
   const todayStr = formatDate(new Date());
@@ -29,58 +27,43 @@ export default function JournalCalendar({
       "
     >
 
+      <div className="mb-4 mt-2 px-2 flex flex-col">
+        <h3 className="text-lg font-semibold text-textPrimary">History</h3>
+        <p className="text-xs text-textSecondary">Select a date to view past entries.</p>
+      </div>
+
       <Calendar
         onChange={setSelectedDate}
         value={selectedDate}
         maxDate={new Date()}
+        minDetail="year"
         showNeighboringMonth={false}
-        prev2Label="«"
-        next2Label="»"
+        prev2Label={null}
+        next2Label={null}
+        prevLabel={"‹"}
+        nextLabel={"›"}
         className="w-full border-none"
 
         tileDisabled={({ date, view }) => {
-
           if (view !== "month") return false;
-
           const dateStr = formatDate(date);
-
-          return (
-            !journalDates.includes(dateStr) &&
-            dateStr !== todayStr
-          );
-
-        }}
-
-        tileClassName={({ date, view }) => {
-
-          if (view !== "month") return;
-
-          const dateStr = formatDate(date);
-
-          if (journalDates.includes(dateStr)) {
-            return "journal-day";
-          }
-
+          
+          // Disable future dates entirely, and dates that are not journal dates (except for today)
+          return (date > new Date()) || (!journalDates.includes(dateStr) && dateStr !== todayStr);
         }}
 
         tileContent={({ date, view }) => {
-
           if (view !== "month") return null;
 
           const dateStr = formatDate(date);
 
           if (journalDates.includes(dateStr)) {
-
             return (
-              <div className="flex justify-center mt-1.5">
-                <span className="w-2 h-2 rounded-full bg-primary"></span>
-              </div>
+              <div className="journal-indicator mt-1 absolute bottom-1 right-1/2 translate-x-1/2"></div>
             );
-
           }
-
+          return null;
         }}
-
       />
 
     </div>

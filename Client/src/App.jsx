@@ -7,8 +7,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Journal from "./pages/Journal";
 import Dashboard from "./pages/Dashboard";
-import Chat from "./pages/Chat";
-import SaathiPage from "./pages/SaathiPage";
+import Feeds from "./pages/Feeds";
 
 import "./styles/global.css";
 
@@ -24,8 +23,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/journal" element={<Journal />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/saathi" element={<SaathiPage />} />
+            <Route path="/feeds" element={<Feeds />} />
           </Routes>
 
         </Router>

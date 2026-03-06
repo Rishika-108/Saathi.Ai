@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import IncomingRequests from "../components/saathi/IncomingRequests";
 import MatchingSuggestions from "../components/saathi/MatchingSuggestions";
+import Chat from "./Chat";
 
 export default function SaathiPage() {
 
   const [loading, setLoading] = useState(true);
   const [incomingRequests, setIncomingRequests] = useState([]);
+  const [roomId, setRoomId] = useState(null);
 
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -31,11 +33,18 @@ export default function SaathiPage() {
       console.error("Incoming request fetch failed", err);
     }
 
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchIncoming();
+
+    const storedRoom = localStorage.getItem("roomId");
+
+    if (storedRoom) {
+      setRoomId(storedRoom);
+    }
+
+    fetchIncoming().finally(() => setLoading(false));
+
   }, []);
 
   if (loading) {
@@ -46,6 +55,45 @@ export default function SaathiPage() {
     );
   }
 
+  /*
+  ==========================
+  ACTIVE CHAT
+  ==========================
+  */
+
+  if (roomId) {
+    return <Chat roomId={roomId} />;
+  }
+
+  /*
+  ==========================
+  INCOMING REQUESTS
+  ==========================
+  */
+
+  if (incomingRequests.length > 0) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-10">
+
+        <h1 className="text-3xl font-semibold mb-8">
+          Your Saathi
+        </h1>
+
+        <IncomingRequests
+          requests={incomingRequests}
+          refresh={fetchIncoming}
+        />
+
+      </div>
+    );
+  }
+
+  /*
+  ==========================
+  MATCHING
+  ==========================
+  */
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
 
@@ -53,14 +101,7 @@ export default function SaathiPage() {
         Your Saathi
       </h1>
 
-      {incomingRequests.length > 0 ? (
-        <IncomingRequests
-          requests={incomingRequests}
-          refresh={fetchIncoming}
-        />
-      ) : (
-        <MatchingSuggestions />
-      )}
+      <MatchingSuggestions />
 
     </div>
   );

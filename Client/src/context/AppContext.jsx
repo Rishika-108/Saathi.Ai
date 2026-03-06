@@ -36,20 +36,50 @@ export const AppProvider = ({ children }) => {
   };
 
   /* =========================
+      AUTH MODAL STATE
+  ========================== */
+
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  /* =========================
       THEME STATE
   ========================== */
 
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("saathi_theme");
+      if (savedTheme) {
+        return savedTheme === "dark";
+      }
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (isDarkTheme) {
       document.body.classList.remove("theme-warm-light");
       document.body.classList.add("theme-night-dark");
+      localStorage.setItem("saathi_theme", "dark");
     } else {
       document.body.classList.remove("theme-night-dark");
       document.body.classList.add("theme-warm-light");
+      localStorage.setItem("saathi_theme", "light");
     }
   }, [isDarkTheme]);
+
+  // Listen for OS theme changes if no local override is explicitly tracked 
+  // (for a simpler implementation, we just set the initial, but this ensures responsiveness if they change OS settings)
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e) => {
+      if (!localStorage.getItem("saathi_theme")) {
+        setIsDarkTheme(e.matches);
+      }
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const toggleTheme = () => {
     setIsDarkTheme((prev) => !prev);
@@ -130,6 +160,9 @@ export const AppProvider = ({ children }) => {
         user,
         login,
         logout,
+
+        isAuthOpen,
+        setIsAuthOpen,
 
         isDarkTheme,
         toggleTheme,

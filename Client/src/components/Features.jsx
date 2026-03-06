@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 /* Default Feature Data (can be externalized later) */
 const featuresData = [
@@ -37,31 +38,60 @@ const featuresData = [
 ];
 
 export default function Features({ features = featuresData }) {
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+  };
+
   return (
-    <section className="py-16 md:py-20 bg-background">
-      <div className="max-w-6xl mx-auto px-6">
+    <section id="features" className="py-16 md:py-24 bg-surface border-t border-borderColor/30">
+      <div className="max-w-7xl mx-auto px-6">
 
         {/* Section Intro */}
-        <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold leading-tight text-textPrimary">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-2xl mx-auto"
+        >
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-textPrimary tracking-tight">
             Designed for{" "}
-            <span className="text-primary">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent py-2 inline-block">
               Emotional Well-Being
             </span>
           </h2>
 
-          <p className="mt-4 text-base md:text-lg text-textSecondary">
+          <p className="mt-6 text-base md:text-lg text-textSecondary leading-relaxed">
             Thoughtfully crafted tools that help you reflect deeply,
             grow consistently, and feel supported every day.
           </p>
-        </div>
+        </motion.div>
 
         {/* Feature Grid */}
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
+          className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
+        >
           {features.map((feature) => (
-            <div
+            <motion.div
+              variants={itemVariants}
               key={feature.id}
-              className="group bg-surface border border-borderColor rounded-lg p-8 shadow-soft transition-all duration-300 hover:shadow-elevated"
+              className="group bg-background border border-borderColor/60 rounded-xl p-8 shadow-sm hover:-translate-y-1 transition-all duration-300 hover:shadow-elevated hover:border-primary/30 flex flex-col items-start"
             >
               {/* Icon */}
               <div className="text-4xl mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -74,17 +104,17 @@ export default function Features({ features = featuresData }) {
               </span>
 
               {/* Title */}
-              <h3 className="mt-3 text-lg font-semibold text-textPrimary group-hover:text-primary transition-colors">
+              <h3 className="mt-4 text-lg font-semibold text-textPrimary group-hover:text-primary transition-colors">
                 {feature.title}
               </h3>
 
               {/* Description */}
-              <p className="mt-2 text-textSecondary leading-relaxed">
+              <p className="mt-3 text-[15px] text-textSecondary leading-relaxed">
                 {feature.description}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
       </div>
     </section>
