@@ -31,12 +31,27 @@ const createJournalEntry = async (req, res) => {
     await newJournal.save();
     // Update the trajectory immediately
     const updatedTrajectory = await updateUserTrajectory(userID);
+    const insights = await generateInsights(
+      cleanText,
+      updatedTrajectory
+    );
 
+    const insight = insights?.[0] ?? null;
+    // 5️⃣ Attach insight to journal
+    if (insight) {
+      newJournal.insight = {
+        title: insight.Title,
+        narrative: insight.Narrative
+      };
+
+      await newJournal.save();
+    }
     return res.status(201).json({
       success: true,
       message: "Journal entry created successfully",
       journal: newJournal,
-      trajectory: updatedTrajectory
+      trajectory: updatedTrajectory,
+      insight: newJournal.insight
     });
 
   } catch (error) {
