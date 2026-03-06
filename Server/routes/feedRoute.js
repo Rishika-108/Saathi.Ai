@@ -4,5 +4,5 @@ import {getFeed, getIndividualPersonalityCard} from "../controllers/feedControll
 
 const feedRouter = express.Router();
 feedRouter.get('/get-feed', authMiddleware, getFeed);
-feedRouter.get('/get-personality-card/:id', authMiddleware, getIndividualPersonalityCard);
+feedRouter.get('/get-feed-card/:id', authMiddleware, getIndividualPersonalityCard);
 export default feedRouter;;

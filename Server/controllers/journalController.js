@@ -6,6 +6,7 @@ import { generateAlias } from "../utils/aliasGenerator.js";
 import { generateMatchReason } from "../utils/matchReason.js";
 import PeerRequest from "../model/peerRequestModel.js";
 import axios from "axios";
+import { generateInsights } from "../config/ai.js";
 
 const createJournalEntry = async (req, res) => {
   try {

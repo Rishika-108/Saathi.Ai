@@ -56,7 +56,7 @@ export const getUserAnalysis = async (req, res) => {
 };
 export const getUserPersonalityCard = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
 
     if (!userId) {
       return res.status(401).json({

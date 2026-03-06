@@ -1,4 +1,4 @@
-
+import JournalModel from "../model/journalModel.js";
 
 // Get Feed of personality cards of all users in the DB
 export const getFeed = async (req, res) => {
