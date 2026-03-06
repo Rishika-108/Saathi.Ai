@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Saathi AI Chat Safety</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial;
+      background: #eef2f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 420px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 14px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    #chatbox {
+      height: 420px;
+      overflow-y: auto;
+      padding: 16px;
+      background: #f9fafc;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .messageBlock {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+    }
+    .user { align-self: flex-end; }
+    .peer { align-self: flex-start; }
+    .bubble {
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .user .bubble { background: #4f46e5; color: white; }
+    .peer .bubble { background: #e5e7eb; color: #111; }
+    .analysis {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .supportCard {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #9a3412;
+      margin-top: 8px;
+    }
+    .crisisScreen {
+      padding: 25px;
+      text-align: center;
+    }
+    .crisisTitle {
+      font-size: 18px;
+      color: #dc2626;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .crisisText {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 10px;
+    }
+    .helpline {
+      background: #fef2f2;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .controls {
+      display: flex;
+      border-top: 1px solid #eee;
+    }
+    input {
+      flex: 1;
+      border: none;
+      padding: 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 0 18px;
+      cursor: pointer;
+    }
+    button:hover { background: #4338ca; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">Saathi AI – Chat Safety Engine</div>
+    <div id="chatbox"></div>
+    <div class="controls">
+      <input id="msg" placeholder="Type message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    let turn = "user";
+
+    function addMessage(sender, text) {
+      const chat = document.getElementById("chatbox");
+      const block = document.createElement("div");
+      block.className = "messageBlock " + sender;
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.innerText = text;
+
+      block.appendChild(bubble);
+      chat.appendChild(block);
+      chat.scrollTop = chat.scrollHeight;
+      return block;
+    }
+
+    function addAnalysisBelow(block, data) {
+      const analysis = document.createElement("div");
+      analysis.className = "analysis";
+
+      // Friendly wording
+      let riskMsg = "";
+      if (data.action === "continue_chat") riskMsg = "Everything seems fine, continue chatting.";
+      else if (data.action === "monitor_conversation") riskMsg = "Notice some distress. Be supportive.";
+      else if (data.action === "suggest_support") riskMsg = "Conversation shows distress. Suggest support.";
+      else if (data.action === "terminate_session") riskMsg = "Serious distress detected. Please check below.";
+
+      analysis.innerHTML =
+        "Message Distress: " + data.distress_score.toFixed(2) +
+        " | Average Distress: " + data.average_distress.toFixed(2) +
+        " | Trend: " + data.trend +
+        "<br><b>Status:</b> " + riskMsg;
+
+      block.appendChild(analysis);
+    }
+
+    function showSupportCard() {
+      const chat = document.getElementById("chatbox");
+      const card = document.createElement("div");
+      card.className = "supportCard";
+      card.innerHTML =
+        "⚠ This conversation shows distress.<br><br>" +
+        "It may help to reach out to support services:<br><br>" +
+        "<b>Therapist Helpline:</b> 9152987821<br>" +
+        "<b>AASRA:</b> +91 9820466726";
+      chat.appendChild(card);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showCrisisScreen() {
+      const chat = document.getElementById("chatbox");
+      chat.innerHTML = "";
+
+      const div = document.createElement("div");
+      div.className = "crisisScreen";
+      div.innerHTML =
+        '<div class="crisisTitle">Session Terminated for Safety</div>' +
+        '<div class="crisisText">This conversation indicates serious emotional distress.<br>You are not alone and help is available.</div>' +
+        '<div class="helpline"><b>Mental Health Helplines</b><br><br>Kiran Mental Health: 1800-599-0019<br>AASRA: +91 9820466726</div>';
+      chat.appendChild(div);
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("msg");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+
+      const msgElement = addMessage(turn, text);
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/chat/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+
+        const result = await response.json();
+        const data = result.analysis;
+
+        addAnalysisBelow(msgElement, data);
+
+        // Friendly UI actions
+        if (data.action === "suggest_support") showSupportCard();
+        if (data.action === "terminate_session") showCrisisScreen();
+
+      } catch (error) {
+        console.log("API error:", error);
+      }
+
+      turn = turn === "user" ? "peer" : "user";
+    }
+
+    document.getElementById("msg").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
