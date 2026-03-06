@@ -8,6 +8,7 @@ import peerRoutes from "../Server/routes/peerRequestRoutes.js";
 import http from "http"
 import { Server } from "socket.io"
 import socketServer from "../Server/socket/socketServer.js";
+import feedRouter from "./routes/feedRoute.js";
 dotenv.config();
 
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/user", userRouter);
 app.use("/api/journal", journalRouter);
 app.use("/api/peers", peerRoutes);
+app.use("/api/feed", feedRouter);
 
 
 app.get("/", (req, res) => {
