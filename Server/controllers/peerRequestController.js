@@ -15,20 +15,22 @@ export const selectPeer = async (req, res) => {
       });
     }
 
-    // check if reverse request exists
-    const reverse = await PeerRequest.findOne({
-      fromUser: targetUserId,
-      toUser: fromUser,
-      status: "pending"
+    const existing = await PeerRequest.findOne({
+      $or: [
+        { fromUser, toUser: targetUserId },
+        { fromUser: targetUserId, toUser: fromUser }
+      ]
     });
 
-    if (reverse) {
+    // mutual match
+    if (existing && existing.fromUser.toString() === targetUserId && existing.status === "pending") {
+
       const roomId = generateRoomId(fromUser, targetUserId);
-      reverse.status = "matched";
-      reverse.roomId = roomId;
-      await reverse.save();
-      
-      
+
+      existing.status = "matched";
+      existing.roomId = roomId;
+
+      await existing.save();
 
       return res.json({
         success: true,
@@ -36,13 +38,21 @@ export const selectPeer = async (req, res) => {
         matched: true,
         roomId,
         users: [fromUser, targetUserId],
-        message: "Mutual match!",
-
+        message: "Mutual match!"
       });
     }
 
-    // create pending request
-    await PeerRequest.create({
+    // already requested
+    if (existing) {
+      return res.json({
+        success: true,
+        status: existing.status,
+        matched: existing.status === "matched",
+        message: "Request already exists"
+      });
+    }
+
+    const request = await PeerRequest.create({
       fromUser,
       toUser: targetUserId,
       status: "pending"
@@ -68,7 +78,7 @@ export const declinePeer = async (req, res) => {
     const userId = req.user.id;
     const { targetUserId } = req.body;
 
-    await PeerRequest.findOneAndUpdate(
+  const request = await PeerRequest.findOneAndUpdate(
       { fromUser: targetUserId, toUser: userId },
       { status: "declined" },
       { new: true }
