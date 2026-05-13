@@ -18,7 +18,8 @@ class ChatSafetyEngine:
         # -------------------------
         self.emotion_model = pipeline(
             "text-classification",
-            model="SamLowe/roberta-base-go_emotions",
+            # model="SamLowe/roberta-base-go_emotions",
+            model="j-hartmann/emotion-english-distilroberta-base",
             top_k=None,
             device=self.device
         )
@@ -28,7 +29,8 @@ class ChatSafetyEngine:
         # -------------------------
         self.intent_model = pipeline(
             "zero-shot-classification",
-            model="facebook/bart-large-mnli",
+            # model="facebook/bart-large-mnli",
+            model="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
             device=self.device
         )
 

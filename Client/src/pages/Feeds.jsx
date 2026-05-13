@@ -138,29 +138,31 @@
 //       </div>
 //     </motion.div>
 //   );
-// }
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { FiSearch, FiHeart, FiMessageCircle, FiShare2 } from "react-icons/fi";
 import { motion } from "framer-motion";
+import PersonalityCardModal from "../components/PersonalityCardModal";
 
-const PostCard = React.forwardRef(({ post, openPersonalityCard }, ref) => {
+const PostCard = React.forwardRef(({ post, openPersonalityCard, onConnect }, ref) => {
   return (
     <motion.div
       ref={ref}
-      onClick={() => openPersonalityCard(post.user.id)}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="p-6 rounded-lg bg-surface border border-borderColor shadow-soft hover:shadow-elevated transition-all duration-300 cursor-pointer"
+      className="p-6 rounded-lg bg-surface border border-borderColor shadow-soft hover:shadow-elevated transition-all duration-300"
     >
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+      <div className="flex justify-between items-start mb-4">
+        <div 
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => openPersonalityCard(post.user.id)}
+        >
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold group-hover:bg-primary group-hover:text-white transition-colors">
             {post.user.name.charAt(0)}
           </div>
 
           <div>
-            <div className="font-semibold text-textPrimary leading-tight">
+            <div className="font-semibold text-textPrimary leading-tight group-hover:text-primary transition-colors">
               {post.user.name}
             </div>
 
@@ -172,14 +174,27 @@ const PostCard = React.forwardRef(({ post, openPersonalityCard }, ref) => {
             </div>
           </div>
         </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onConnect(post.user.id);
+          }}
+          className="px-4 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+        >
+          <FiHeart size={12} /> Connect
+        </button>
       </div>
 
-      <p className="text-textSecondary mb-5 leading-relaxed text-[15px]">
+      <p 
+        className="text-textSecondary mb-5 leading-relaxed text-[15px] cursor-pointer"
+        onClick={() => openPersonalityCard(post.user.id)}
+      >
         {post.latestJournal.text}
       </p>
 
       {post.insight && (
-        <div className="mb-4 text-sm bg-primary/10 text-primary p-3 rounded-md">
+        <div className="mb-4 text-sm bg-primary/10 text-primary p-3 rounded-md border border-primary/20">
           💡 {post.insight.title || "Insight"}: {post.insight.narrative || ""}
         </div>
       )}
@@ -205,6 +220,8 @@ export default function Feeds() {
   const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const observer = useRef();
 
   // Fetch feed from backend
@@ -253,6 +270,32 @@ export default function Feeds() {
     fetchFeed();
   }, []);
 
+  const handleConnect = async (targetUserId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/peers/select", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ targetUserId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        import("react-hot-toast").then((module) => {
+          module.default.success(data.message || "Request sent!");
+        });
+      } else {
+        import("react-hot-toast").then((module) => {
+          module.default.error(data.message || "Failed to send request");
+        });
+      }
+    } catch (error) {
+      console.error("Connect error:", error);
+    }
+  };
+
   // Fetch individual personality card
   const openPersonalityCard = async (userId) => {
     try {
@@ -265,8 +308,8 @@ export default function Feeds() {
       );
       const data = await res.json();
       if (data.success) {
-        console.log("Personality Card:", data.personalityCard);
-        // You can open a modal or navigate to a personality card page here
+        setSelectedCard(data.personalityCard);
+        setIsModalOpen(true);
       }
     } catch (error) {
       console.error("Personality card error:", error);
@@ -282,17 +325,13 @@ export default function Feeds() {
       post.user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Infinite scroll (optional, can be extended with pagination)
+  // Infinite scroll (currently disabled to prevent reload loop, as pagination isn't implemented)
   const lastPostElementRef = useCallback(
     (node) => {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          fetchFeed();
-        }
-      });
-      if (node) observer.current.observe(node);
+      // Temporarily disabled fetchFeed() here to fix the infinite reload issue
+      // We will re-enable once backend supports pagination
     },
     [loading]
   );
@@ -349,6 +388,7 @@ export default function Feeds() {
                     key={post.user.id}
                     post={post}
                     openPersonalityCard={openPersonalityCard}
+                    onConnect={handleConnect}
                   />
                 );
               } else {
@@ -357,6 +397,7 @@ export default function Feeds() {
                     key={post.user.id}
                     post={post}
                     openPersonalityCard={openPersonalityCard}
+                    onConnect={handleConnect}
                   />
                 );
               }
@@ -364,6 +405,12 @@ export default function Feeds() {
           )}
         </div>
       </div>
+
+      <PersonalityCardModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        cardData={selectedCard}
+      />
     </motion.div>
   );
 }

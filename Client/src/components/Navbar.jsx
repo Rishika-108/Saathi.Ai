@@ -3,6 +3,7 @@ import { FiMenu, FiX, FiSun, FiMoon, FiUser } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import { useApp } from "../context/AppContext";
+import PeerRequestsDropdown from "./PeerRequestsDropdown";
 
 export default function Navbar() {
 
@@ -153,12 +154,15 @@ export default function Navbar() {
             )}
 
             {/* Theme */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-md hover:bg-primary/10 text-textPrimary transition"
-            >
-              {isDarkTheme ? <FiSun size={18} /> : <FiMoon size={18} />}
-            </button>
+            <div className="flex items-center gap-2">
+              <PeerRequestsDropdown user={user} />
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-md hover:bg-primary/10 text-textPrimary transition"
+              >
+                {isDarkTheme ? <FiSun size={18} /> : <FiMoon size={18} />}
+              </button>
+            </div>
 
             {/* Profile */}
             {user ? (

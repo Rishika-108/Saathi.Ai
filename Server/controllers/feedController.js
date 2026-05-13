@@ -10,14 +10,15 @@ export const getFeed = async (req, res) => {
       .find({})
       .sort({ createdAt: -1 })
       .limit(20)
-      .populate("userID", "name")
+      .populate("userID", "name trajectory")
       .select("text createdAt insight userID")
       .lean()
 
     const feed = journals.map(journal => ({
       user: {
         id: journal.userID._id,
-        name: journal.userID.name
+        name: journal.userID.name,
+        trajectory: journal.userID.trajectory
       },
 
       insight: journal.insight ?? null,
@@ -57,7 +58,7 @@ export const getIndividualPersonalityCard = async (req, res) => {
     const journal = await JournalModel
       .findOne({ userID: id })
       .sort({ createdAt: -1 })
-      .populate("userID", "name")
+      .populate("userID", "name trajectory")
       .lean()
 
     if (!journal) {
@@ -74,6 +75,12 @@ export const getIndividualPersonalityCard = async (req, res) => {
         user: {
           id: journal.userID._id,
           name: journal.userID.name
+        },
+
+        emotionalState: {
+          dominantEmotion: journal.userID.trajectory?.dominant_emotion || "Neutral",
+          stability: journal.userID.trajectory?.stability_score || 0,
+          vector: journal.userID.trajectory?.emotion_vector || {}
         },
 
         insight: journal.insight,

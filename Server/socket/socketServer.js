@@ -1,4 +1,5 @@
 import PeerRequest from "../model/PeerRequestModel.js";
+import axios from "axios";
 import {
   activeChats,
   userToRoom,
@@ -90,9 +91,24 @@ export default function socketServer(io) {
     message
   })
 
+  // 1️⃣ Safety Analysis (Async)
+  axios.post(`${process.env.PYTHON_SERVICE_URL}/chat/analyze`, { text: message })
+    .then(response => {
+      const { analysis } = response.data;
+      if (analysis.risk_score > 0.8 || analysis.safety_flags.length > 0) {
+        console.log("SAFETY ESCALATION IN ROOM:", roomId);
+        io.to(roomId).emit("chat_ended", { 
+          reason: "safety_escalation", 
+          riskLevel: "HIGH" 
+        });
+        endSession(roomId);
+      }
+    })
+    .catch(err => console.error("Chat safety analysis failed:", err.message));
+
   if(session.messageCount >= MAX_MESSAGES){
-    io.to(roomId).emit("chat_ended")
-    endSession(roomId)
+    io.to(roomId).emit("chat_ended", { reason: "message_limit" });
+    endSession(roomId);
   }
 
 })

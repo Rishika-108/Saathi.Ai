@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Journal from "./pages/Journal";
 import Dashboard from "./pages/Dashboard";
 import Feeds from "./pages/Feeds";
+import Chat from "./pages/Chat";
 
 import "./styles/global.css";
 
@@ -47,6 +48,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Feeds />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/chat/:roomId" 
+              element={
+                <ProtectedRoute>
+                  <Chat />
                 </ProtectedRoute>
               } 
             />
