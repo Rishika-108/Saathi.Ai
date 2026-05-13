@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Hardcoded Gemini API key
-const GEMINI_API_KEY = "AIzaSyBqDme6y8TRS7w3wBdF3D1j7Po5lMA8mz0";
+const GEMINI_API_KEY = "temp_key";
 
 /**
  * Builds the reflective journal prompt
