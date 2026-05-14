@@ -186,18 +186,12 @@ const PostCard = React.forwardRef(({ post, openPersonalityCard, onConnect }, ref
         </button>
       </div>
 
-      <p 
-        className="text-textSecondary mb-5 leading-relaxed text-[15px] cursor-pointer"
+      <p
+        className="text-textPrimary mb-5 leading-relaxed text-[15px] cursor-pointer font-medium italic"
         onClick={() => openPersonalityCard(post.user.id)}
       >
-        {post.latestJournal.text}
+        "{post.publicSummary}"
       </p>
-
-      {post.insight && (
-        <div className="mb-4 text-sm bg-primary/10 text-primary p-3 rounded-md border border-primary/20">
-          💡 {post.insight.title || "Insight"}: {post.insight.narrative || ""}
-        </div>
-      )}
 
       <div className="flex items-center gap-6 mt-4 pt-4 border-t border-borderColor/50 text-textSecondary">
         <button className="flex items-center gap-2 hover:text-primary transition group">
@@ -319,7 +313,7 @@ export default function Feeds() {
   // Filter posts by search query
   const filteredPosts = posts.filter(
     (post) =>
-      post.latestJournal.text
+      post.publicSummary
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       post.user.name.toLowerCase().includes(searchQuery.toLowerCase())

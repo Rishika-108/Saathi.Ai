@@ -1,88 +1,361 @@
+# import numpy as np
+# import math
+
+
+# def exponential_weights(n, decay=0.7):
+#     """Generate time-decay weights. Most recent entry gets highest weight."""
+#     weights = [math.exp(-decay * i) for i in reversed(range(n))]
+#     total = sum(weights)
+#     return [w / total for w in weights]
+
+
+# def weighted_sentiment(entries, weights):
+#     entries = [e for e in entries if e is not None and "sentiment" in e]
+#     if not entries:
+#         return 0.0 # default if no valid entries
+#     scores = [e["sentiment"]["score"] for e in entries]
+#     return float(sum(w * s for w, s in zip(weights, scores)))
+
+
+# def weighted_emotion(entries, weights):
+#     entries = [e for e in entries if e is not None and "emotion" in e and "vector" in e["emotion"]]
+#     if not entries:
+#         return {}, "neutral"  # default vector and dominant emotion
+#     emotions = entries[0]["emotion"]["vector"].keys()
+#     combined = {}
+#     for emotion in emotions:
+#         values = [e["emotion"]["vector"][emotion] for e in entries]
+#         combined[emotion] = float(sum(w * v for w, v in zip(weights, values)))
+
+#     dominant = max(combined, key=combined.get)
+#     return combined, dominant
+
+
+# def compute_volatility(e1, e2):
+#     v1 = np.array(list(e1["emotion"]["vector"].values()))
+#     v2 = np.array(list(e2["emotion"]["vector"].values()))
+#     return float(np.linalg.norm(v2 - v1))
+
+
+# def risk_momentum(e1, e2):
+#     return float(e2["risk"]["score"] - e1["risk"]["score"])
+
+
+# def build_weighted_trajectory(entries, decay=0.7):
+#     """
+#     entries: list of entry JSONs (ordered oldest → newest)
+#     Handles single-entry case safely.
+#     """
+#     # if not entries:
+#     #     # No entries yet
+#     #     return {}
+#     if not entries:
+#      return {
+#         "weighted_sentiment": 0.0,
+#         "dominant_emotion": "neutral",
+#         "emotion_vector": {},
+#         "volatility": 0.0,
+#         "stability_score": 1.0,
+#         "risk_momentum": 0.0,
+#         "memory_decay_lambda": decay
+#     }
+
+#     weights = exponential_weights(len(entries), decay)
+
+#     sentiment_score = weighted_sentiment(entries, weights)
+#     emotion_vector, dominant_emotion = weighted_emotion(entries, weights)
+
+#     # Safe volatility & risk
+#     if len(entries) == 1:
+#         volatility = 0.0
+#         stability_score = 1.0
+#         risk_change = 0.0
+#     else:
+#         volatility = compute_volatility(entries[-2], entries[-1])
+#         stability_score = float(1 - volatility)
+#         risk_change = risk_momentum(entries[-2], entries[-1])    
+
+#     return {
+#         "weighted_sentiment": sentiment_score,
+#         "dominant_emotion": dominant_emotion,
+#         "emotion_vector": emotion_vector,
+#         "volatility": volatility,
+#         "stability_score": stability_score,
+#         "risk_momentum": risk_change,
+#         "memory_decay_lambda": decay
+#     }
+    
 import numpy as np
 import math
 
 
+# ==============================
+# EXPONENTIAL WEIGHTS
+# ==============================
+
 def exponential_weights(n, decay=0.7):
-    """Generate time-decay weights. Most recent entry gets highest weight."""
-    weights = [math.exp(-decay * i) for i in reversed(range(n))]
+    """
+    Generate time-decay weights.
+    Most recent entry gets highest weight.
+    """
+
+    weights = [
+        math.exp(-decay * i)
+        for i in reversed(range(n))
+    ]
+
     total = sum(weights)
+
     return [w / total for w in weights]
 
 
-def weighted_sentiment(entries, weights):
-    entries = [e for e in entries if e is not None and "sentiment" in e]
-    if not entries:
-        return 0.0 # default if no valid entries
-    scores = [e["sentiment"]["score"] for e in entries]
-    return float(sum(w * s for w, s in zip(weights, scores)))
+# ==============================
+# WEIGHTED SENTIMENT
+# ==============================
+
+def weighted_sentiment(entries, decay=0.7):
+
+    valid_entries = [
+
+        e for e in entries
+
+        if (
+            e is not None
+            and "sentiment" in e
+            and "score" in e["sentiment"]
+        )
+    ]
+
+    if not valid_entries:
+        return 0.0
+
+    # Recompute weights AFTER filtering
+    weights = exponential_weights(
+        len(valid_entries),
+        decay
+    )
+
+    scores = [
+        e["sentiment"]["score"]
+        for e in valid_entries
+    ]
+
+    return float(
+
+        sum(
+            w * s
+            for w, s in zip(weights, scores)
+        )
+    )
 
 
-def weighted_emotion(entries, weights):
-    entries = [e for e in entries if e is not None and "emotion" in e and "vector" in e["emotion"]]
-    if not entries:
-        return {}, "neutral"  # default vector and dominant emotion
-    emotions = entries[0]["emotion"]["vector"].keys()
+# ==============================
+# WEIGHTED EMOTION
+# ==============================
+
+def weighted_emotion(entries, decay=0.7):
+
+    valid_entries = [
+
+        e for e in entries
+
+        if (
+            e is not None
+            and "emotion" in e
+            and "vector" in e["emotion"]
+        )
+    ]
+
+    if not valid_entries:
+
+        return {}, "neutral"
+
+    # Recompute weights AFTER filtering
+    weights = exponential_weights(
+        len(valid_entries),
+        decay
+    )
+
+    emotions = (
+        valid_entries[0]["emotion"]["vector"]
+        .keys()
+    )
+
     combined = {}
-    for emotion in emotions:
-        values = [e["emotion"]["vector"][emotion] for e in entries]
-        combined[emotion] = float(sum(w * v for w, v in zip(weights, values)))
 
-    dominant = max(combined, key=combined.get)
+    for emotion in emotions:
+
+        values = [
+
+            e["emotion"]["vector"].get(
+                emotion,
+                0
+            )
+
+            for e in valid_entries
+        ]
+
+        combined[emotion] = float(
+
+            sum(
+                w * v
+                for w, v in zip(weights, values)
+            )
+        )
+
+    dominant = max(
+        combined,
+        key=combined.get
+    )
+
     return combined, dominant
 
 
-def compute_volatility(e1, e2):
-    v1 = np.array(list(e1["emotion"]["vector"].values()))
-    v2 = np.array(list(e2["emotion"]["vector"].values()))
-    return float(np.linalg.norm(v2 - v1))
+# ==============================
+# VOLATILITY
+# ==============================
 
+def compute_volatility(e1, e2):
+
+    try:
+
+        v1 = np.array(
+
+            list(
+                e1["emotion"]["vector"]
+                .values()
+            )
+        )
+
+        v2 = np.array(
+
+            list(
+                e2["emotion"]["vector"]
+                .values()
+            )
+        )
+
+        return float(
+            np.linalg.norm(v2 - v1)
+        )
+
+    except Exception:
+
+        return 0.0
+
+
+# ==============================
+# RISK MOMENTUM
+# ==============================
 
 def risk_momentum(e1, e2):
-    return float(e2["risk"]["score"] - e1["risk"]["score"])
+
+    try:
+
+        return float(
+            e2["risk"]["score"]
+            - e1["risk"]["score"]
+        )
+
+    except Exception:
+
+        return 0.0
 
 
-def build_weighted_trajectory(entries, decay=0.7):
+# ==============================
+# BUILD TRAJECTORY
+# ==============================
+
+def build_weighted_trajectory(
+    entries,
+    decay=0.7
+):
     """
-    entries: list of entry JSONs (ordered oldest → newest)
-    Handles single-entry case safely.
+    entries: list of entry JSONs
+    ordered oldest → newest
+
+    Handles single-entry
+    and empty-entry cases safely.
     """
-    # if not entries:
-    #     # No entries yet
-    #     return {}
+
+    # Empty entries
     if not entries:
-     return {
-        "weighted_sentiment": 0.0,
-        "dominant_emotion": "neutral",
-        "emotion_vector": {},
-        "volatility": 0.0,
-        "stability_score": 1.0,
-        "risk_momentum": 0.0,
-        "memory_decay_lambda": decay
-    }
 
-    weights = exponential_weights(len(entries), decay)
+        return {
 
-    sentiment_score = weighted_sentiment(entries, weights)
-    emotion_vector, dominant_emotion = weighted_emotion(entries, weights)
+            "weighted_sentiment": 0.0,
+
+            "dominant_emotion": "neutral",
+
+            "emotion_vector": {},
+
+            "volatility": 0.0,
+
+            "stability_score": 1.0,
+
+            "risk_momentum": 0.0,
+
+            "memory_decay_lambda": decay
+        }
+
+    sentiment_score = weighted_sentiment(
+        entries,
+        decay
+    )
+
+    emotion_vector, dominant_emotion = (
+        weighted_emotion(
+            entries,
+            decay
+        )
+    )
 
     # Safe volatility & risk
     if len(entries) == 1:
+
         volatility = 0.0
+
         stability_score = 1.0
+
         risk_change = 0.0
+
     else:
-        volatility = compute_volatility(entries[-2], entries[-1])
-        stability_score = float(1 - volatility)
-        risk_change = risk_momentum(entries[-2], entries[-1])    
+
+        volatility = compute_volatility(
+            entries[-2],
+            entries[-1]
+        )
+
+        stability_score = max(
+            0.0,
+            float(1 - volatility)
+        )
+
+        risk_change = risk_momentum(
+            entries[-2],
+            entries[-1]
+        )
 
     return {
-        "weighted_sentiment": sentiment_score,
-        "dominant_emotion": dominant_emotion,
-        "emotion_vector": emotion_vector,
-        "volatility": volatility,
-        "stability_score": stability_score,
-        "risk_momentum": risk_change,
-        "memory_decay_lambda": decay
-    }
-    
 
+        "weighted_sentiment":
+            sentiment_score,
+
+        "dominant_emotion":
+            dominant_emotion,
+
+        "emotion_vector":
+            emotion_vector,
+
+        "volatility":
+            volatility,
+
+        "stability_score":
+            stability_score,
+
+        "risk_momentum":
+            risk_change,
+
+        "memory_decay_lambda":
+            decay
+    }

@@ -18,6 +18,8 @@ export const getPeerMatches = async (userID, topN = 3) => {
       trajectory: u.trajectory
     }));
 
+    console.log(`Sending ${formattedUsers.length} users to matching engine for userID: ${userID}`);
+
     // 3️⃣ Call Python matching service
     const response = await axios.post(
       `${process.env.PYTHON_SERVICE_URL}/matching`,
@@ -25,8 +27,11 @@ export const getPeerMatches = async (userID, topN = 3) => {
         users: formattedUsers,
         current_user_id: userID,
         top_n: topN
-      }
+      },
+      { timeout: 15000 } // 15 second timeout
     );
+
+    console.log("Matching engine response received.");
 
     return response.data.matches;
 

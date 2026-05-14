@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiBookOpen } from "react-icons/fi";
 import JournalPage from "./JournalPage";
 import { useApp } from "../../context/AppContext";
+import toast from "react-hot-toast";
+import PeerRecommendationModal from "../PeerRecommendationModal";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const MAX_CHAR = 500;
 
@@ -25,6 +29,9 @@ export default function JournalBook({
   const [entryIndex, setEntryIndex] = useState(0);
   const [writeMode, setWriteMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [matchingLoading, setMatchingLoading] = useState(false);
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [recommendedPeers, setRecommendedPeers] = useState([]);
 
   const totalEntries = journals.length;
 
@@ -99,6 +106,40 @@ export default function JournalBook({
       localStorage.removeItem("saathi_journal")
 
       await refreshJournals()
+      
+      toast.success("Journal saved! Finding the best Saathi matches for you...", {
+        duration: 3000,
+        icon: "🧠"
+      });
+
+      // Fetch Peer Recommendations
+      try {
+        setShowRecommendationModal(true);
+        setMatchingLoading(true);
+        setRecommendedPeers([]);
+
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/journal/peer-matches`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.success && data.matches?.length > 0) {
+          const enriched = data.matches.map(m => ({
+             user: {
+               id: m.user_id,
+               name: m.alias,
+               publicSummary: `Reflecting on ${m.dominant_emotion || 'neutral'} moments.`
+             },
+             match_score: m.match_score
+          }));
+          setRecommendedPeers(enriched);
+        }
+      } catch (e) {
+        console.error("Peer matching fetch error:", e);
+      } finally {
+        setMatchingLoading(false);
+      }
 
       setEntryIndex(0)
       setWriteMode(false)
@@ -124,26 +165,20 @@ export default function JournalBook({
     });
 
   return (
+    <>
     <div className="flex flex-col h-full space-y-4">
-
+      {/* ... existing content ... */}
       {!writeMode && currentEntry && (
-
         <div className="bg-surface-elevated border border-borderColor rounded-xl p-4 shadow-soft">
-
           <div className="flex items-center justify-between">
-
             <span className="text-xs md:text-sm font-medium text-textPrimary">
               {dateLabel}
             </span>
-
             <span className="text-xs text-textSecondary">
               {timeLabel}
             </span>
-
           </div>
-
         </div>
-
       )}
 
       <div
@@ -197,9 +232,7 @@ export default function JournalBook({
       </div>
 
       {!writeMode && totalEntries > 0 && (
-
         <div className="flex items-center justify-between">
-
           <button
             onClick={prevEntry}
             disabled={entryIndex === 0}
@@ -219,67 +252,48 @@ export default function JournalBook({
           >
             Next
           </button>
-
         </div>
-
       )}
 
       {!writeMode && (
-
-  <div className="flex justify-end">
-
-    <button
-      onClick={() => {
-        if (!allowWriting) {
-          alert("You can only write today's journal.");
-          return;
-        }
-        setWriteMode(true);
-      }}
-      className="
-      px-5 py-2 rounded-md
-      bg-primary text-white font-medium
-      shadow-soft
-      hover:bg-primary-hover
-      active:scale-[0.97]
-      transition-all
-      "
-    >
-      Write Journal
-    </button>
-
-  </div>
-
-)}
+        <div className="flex justify-end">
+          <button
+            onClick={() => {
+              if (!allowWriting) {
+                alert("You can only write today's journal.");
+                return;
+              }
+              setWriteMode(true);
+            }}
+            className="px-5 py-2 rounded-md bg-primary text-white font-medium shadow-soft hover:bg-primary-hover active:scale-[0.97] transition-all"
+          >
+            Write Journal
+          </button>
+        </div>
+      )}
 
       {writeMode && (
-
         <div className="flex items-center justify-between">
-
           <span className="text-xs md:text-sm text-textSecondary">
             {journalText.length} / {MAX_CHAR}
           </span>
-
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="
-            px-6 py-2 rounded-md
-            bg-primary text-white font-medium
-            shadow-soft
-            hover:bg-primary-hover
-            active:scale-[0.97]
-            transition-all
-            disabled:opacity-60
-            "
+            className="px-6 py-2 rounded-md bg-primary text-white font-medium shadow-soft hover:bg-primary-hover active:scale-[0.97] transition-all disabled:opacity-60"
           >
             {saving ? "Saving..." : "Submit Journal"}
           </button>
-
         </div>
-
       )}
-
     </div>
+
+    <PeerRecommendationModal 
+      isOpen={showRecommendationModal}
+      onClose={() => setShowRecommendationModal(false)}
+      peers={recommendedPeers}
+      loading={matchingLoading}
+    />
+    </>
   );
-}
+}

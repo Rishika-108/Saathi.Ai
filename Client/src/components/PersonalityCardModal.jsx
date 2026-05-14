@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiActivity, FiSmile, FiHeart } from "react-icons/fi";
 import EmotionRadar from "./dashboard/EmotionRadar";
@@ -6,6 +7,18 @@ import toast from "react-hot-toast";
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function PersonalityCardModal({ isOpen, onClose, cardData }) {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen || !cardData) return null;
 
   const { user, emotionalState, latestJournal, insight } = cardData;
@@ -36,16 +49,16 @@ export default function PersonalityCardModal({ isOpen, onClose, cardData }) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-surface border border-borderColor rounded-2xl shadow-elevated w-full max-w-lg overflow-hidden relative"
+          className="bg-surface border border-borderColor rounded-2xl shadow-elevated w-full max-w-lg max-h-[90vh] overflow-y-auto relative custom-scrollbar"
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-textSecondary hover:text-textPrimary transition z-10"
+            className="absolute top-4 right-4 text-textSecondary hover:text-textPrimary transition z-10 bg-surface/80 backdrop-blur-md rounded-full p-1"
           >
             <FiX size={24} />
           </button>
@@ -80,20 +93,15 @@ export default function PersonalityCardModal({ isOpen, onClose, cardData }) {
               </div>
             </div>
 
-            {insight && (
-              <div className="mb-8 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                  <FiHeart size={14} /> AI Perspective
-                </h3>
-                <p className="text-sm text-textSecondary italic leading-relaxed">
-                  "{insight.narrative}"
-                </p>
+            {cardData.publicSummary && (
+              <div className="mb-8 p-4 rounded-xl bg-background border border-borderColor italic text-textSecondary text-sm">
+                "{cardData.publicSummary}"
               </div>
             )}
 
             <button
               onClick={handleConnect}
-              className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-soft hover:opacity-90 transition transform hover:-translate-y-1"
+              className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-soft hover:opacity-90 transition transform hover:-translate-y-1 sticky bottom-0"
             >
               Request to Connect
             </button>
@@ -106,3 +114,4 @@ export default function PersonalityCardModal({ isOpen, onClose, cardData }) {
     </AnimatePresence>
   );
 }
+

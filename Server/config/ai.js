@@ -102,3 +102,57 @@ export const generateInsights = async (lastJournal, trajectory) => {
     ];
   }
 };
+
+/**
+ * Builds the public undercurrent prompt (Connect Page)
+ */
+function buildUndercurrentPrompt(journals, trajectory) {
+  const combinedText = journals.map((j, i) => `Journal ${i + 1}: ${j.text}`).join("\n\n");
+  
+  return `
+You are a master of emotional prose and psychological subtext. 
+Your task is to describe a person's current "emotional undercurrent" based on their recent reflections.
+
+Context: 
+Someone is viewing this person's profile in a peer support community. 
+They need to feel a deep, human connection to this person's internal world without reading their private journals.
+
+Style Guide:
+- Write in the THIRD PERSON ("He/She/They").
+- Use subtle, evocative, and poetic language. 
+- Avoid medical or clinical terms. 
+- Focus on the "quiet" emotions—the ones that sit underneath the surface.
+- Aim for a tone similar to: "He wasn’t devastated in the dramatic sense. It was quieter than that — a slow embarrassment sitting underneath everything he did that day."
+
+Input Data:
+${combinedText}
+
+Trajectory Context:
+Dominant Emotion: ${trajectory.dominant_emotion}
+Stability: ${trajectory.stability_score}
+
+Output:
+Provide a 2-3 sentence narrative (max 60 words) that captures the "emotional weather" of this person right now. 
+Be specific about the feeling, not the events.
+`;
+}
+
+/**
+ * Generates the public emotional undercurrent narrative
+ */
+export const generatePublicUndercurrent = async (journals, trajectory) => {
+  const prompt = buildUndercurrentPrompt(journals, trajectory);
+  const url = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=\${GEMINI_API_KEY}\`;
+
+  try {
+    const response = await axios.post(url, {
+      contents: [{ role: "user", parts: [{ text: prompt }] }]
+    }, { timeout: 15000 });
+
+    const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    return text || "Navigating a quiet period of inner reflection.";
+  } catch (error) {
+    console.error("Undercurrent AI Error:", error.message);
+    return "Reflecting on life's subtle shifts and quiet moments.";
+  }
+};

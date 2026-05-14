@@ -228,6 +228,7 @@ import ShareLinks from "../components/dashboard/ShareLinks";
 import AIInsight from "../components/dashboard/AIInsight";
 import ReflectionHeatmap from "../components/dashboard/ReflectionHeatmap";
 import EmotionRadar from "../components/dashboard/EmotionRadar";
+import PeerRecommender from "../components/dashboard/PeerRecommender";
 import Footer from "../components/Footer";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -406,6 +407,7 @@ export default function Dashboard() {
             {/* HERO GRID */}
             <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <AIInsight trajectory={emotionalState} latest={latestEntry} insight={aiInsight} />
+              <PeerRecommender trajectory={emotionalState} />
               <ShareLinks />
             </motion.div>
 

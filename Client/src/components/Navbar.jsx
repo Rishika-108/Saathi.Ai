@@ -4,6 +4,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import { useApp } from "../context/AppContext";
 import PeerRequestsDropdown from "./PeerRequestsDropdown";
+import { io } from "socket.io-client";
+import toast from "react-hot-toast";
+
+const SOCKET_URL = "http://localhost:5000";
 
 export default function Navbar() {
 
@@ -17,6 +21,43 @@ export default function Navbar() {
   const location = useLocation();
 
   const profileRef = useRef(null);
+  const socketRef = useRef(null);
+
+  /* Real-time Match Notifications */
+  useEffect(() => {
+    if (!user) return;
+
+    const socket = io(SOCKET_URL);
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      socket.emit("register_user", user.id);
+    });
+
+    socket.on("peer_matched", ({ roomId }) => {
+      toast((t) => (
+        <div className="flex flex-col gap-2">
+          <p className="font-semibold text-sm">Mutual match found! Someone wants to connect.</p>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              navigate(`/chat/${roomId}`);
+            }}
+            className="px-3 py-1 bg-primary text-white text-xs rounded-md"
+          >
+            Join Chat
+          </button>
+        </div>
+      ), {
+        duration: 10000,
+        icon: "🤝"
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   /* Scroll shadow */
   useEffect(() => {
@@ -148,7 +189,7 @@ export default function Navbar() {
                       : "text-textPrimary hover:text-primary"
                   }`}
                 >
-                  Feeds
+                  Connect
                 </button>
               </>
             )}
@@ -263,7 +304,7 @@ export default function Navbar() {
                   onClick={() => navigateAndClose("/feeds")}
                   className="text-left text-textPrimary py-2"
                 >
-                  Feeds
+                  Connect
                 </button>
                 
                 <div className="border-t border-borderColor/50 pt-2 pb-1 mt-1">

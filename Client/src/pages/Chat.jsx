@@ -4,11 +4,12 @@ import { io } from "socket.io-client";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageList from "../components/chat/MessageList";
 import MessageInput from "../components/chat/MessageInput";
-const MESSAGE_CAP = 20;
-// import { socket } from "../";
+const MESSAGE_CAP = 30;
+const SOCKET_URL = "http://localhost:5000";
 
 const Chat = ({ roomId: initialRoom }) => {
   const params = useParams();
+  const socketRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [hasAcceptedDisclaimer, setHasAcceptedDisclaimer] = useState(false);
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
@@ -18,10 +19,13 @@ const Chat = ({ roomId: initialRoom }) => {
   const [isHighRisk, setIsHighRisk] = useState(false);
   const bottomRef = useRef(null);
   const userId = localStorage.getItem("userId");
+  
   console.log("CHAT USER:", userId);
+
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -31,7 +35,13 @@ const Chat = ({ roomId: initialRoom }) => {
     if (chatEnded || timeLeft <= 0) return;
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
@@ -42,23 +52,28 @@ const Chat = ({ roomId: initialRoom }) => {
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
+
   /* ========================= JOIN CHAT ========================= */
   useEffect(() => {
     if (!userId) return;
 
-    console.log("Attempting to join chat...");
-    socket.emit("join_chat", { userId });
+    console.log("Attempting to connect to socket...");
+    const socket = io(SOCKET_URL);
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("Socket connected, joining chat...");
+      socket.emit("join_chat", { userId });
+    });
 
     socket.on("joined_room", (room) => {
       console.log("Joined room:", room);
-
       setRoomId(room);
       localStorage.setItem("roomId", room);
     });
 
     socket.on("receive_message", ({ userId: sender, message }) => {
       console.log("RECEIVED MESSAGE EVENT:", sender, message);
-
       if (sender === userId) return;
 
       setMessages((prev) => [
@@ -73,6 +88,7 @@ const Chat = ({ roomId: initialRoom }) => {
     });
 
     socket.on("chat_ended", ({ reason, riskLevel } = {}) => {
+      console.log("Chat ended event:", reason);
       setChatEnded(true);
       if (riskLevel === "HIGH" || reason === "safety_escalation") {
         setIsHighRisk(true);
@@ -80,16 +96,14 @@ const Chat = ({ roomId: initialRoom }) => {
     });
 
     socket.on("error", (msg) => {
-      console.error(msg);
+      console.error("Socket Error:", msg);
     });
 
     return () => {
-      socket.off("joined_room");
-      socket.off("receive_message");
-      socket.off("chat_ended");
-      socket.off("error");
+      socket.disconnect();
     };
-  }, []);
+  }, [userId]);
+
   /* ========================= SEND MESSAGE ========================= */
   const handleSend = (text) => {
     console.log("SEND BUTTON CLICKED");
@@ -110,7 +124,7 @@ const Chat = ({ roomId: initialRoom }) => {
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, messageObj]);
-    socket.emit("send_message", { roomId, userId, message: text });
+    socketRef.current?.emit("send_message", { roomId, userId, message: text });
     setHasSentFirstMessage(true);
   };
   const isCapReached = messages.length >= MESSAGE_CAP || chatEnded;

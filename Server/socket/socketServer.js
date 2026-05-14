@@ -10,11 +10,19 @@ import {
 const MAX_MESSAGES = 30;
 const MAX_DURATION = 15 * 60 * 1000;
 
+export const userSockets = new Map(); // userId -> socket.id
+
 export default function socketServer(io) {
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
+    socket.on("register_user", (userId) => {
+      console.log(`Registering socket ${socket.id} for user ${userId}`);
+      userSockets.set(userId, socket.id);
+    });
+
     socket.on("join_chat", async ({ userId }) => {
+      userSockets.set(userId, socket.id); // Also register on join
       console.log("JOIN REQUEST FROM:", userId);
       try {
         const match = await PeerRequest.findOne({
@@ -115,6 +123,13 @@ export default function socketServer(io) {
 
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
+      // Clean up mapping
+      for (const [uid, sid] of userSockets.entries()) {
+        if (sid === socket.id) {
+          userSockets.delete(uid);
+          break;
+        }
+      }
     });
   });
 }

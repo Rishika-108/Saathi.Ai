@@ -10,24 +10,26 @@ export const getFeed = async (req, res) => {
       .find({})
       .sort({ createdAt: -1 })
       .limit(20)
-      .populate("userID", "name trajectory")
+      .populate("userID", "name trajectory publicUndercurrent")
       .select("text createdAt insight userID")
       .lean()
 
-    const feed = journals.map(journal => ({
-      user: {
-        id: journal.userID._id,
-        name: journal.userID.name,
-        trajectory: journal.userID.trajectory
-      },
+    const feed = journals.map(journal => {
+      const traj = journal.userID.trajectory || {};
+      const undercurrent = journal.userID.publicUndercurrent || "Navigating a quiet period of inner reflection.";
 
-      insight: journal.insight ?? null,
-
-      latestJournal: {
-        text: journal.text,
-        createdAt: journal.createdAt
-      }
-    }))
+      return {
+        user: {
+          id: journal.userID._id,
+          name: journal.userID.name,
+          trajectory: traj
+        },
+        publicSummary: undercurrent,
+        latestJournal: {
+          createdAt: journal.createdAt
+        }
+      };
+    })
 
     return res.status(200).json({
       success: true,
@@ -58,7 +60,7 @@ export const getIndividualPersonalityCard = async (req, res) => {
     const journal = await JournalModel
       .findOne({ userID: id })
       .sort({ createdAt: -1 })
-      .populate("userID", "name trajectory")
+      .populate("userID", "name trajectory publicUndercurrent")
       .lean()
 
     if (!journal) {
@@ -68,28 +70,25 @@ export const getIndividualPersonalityCard = async (req, res) => {
       })
     }
 
+    const traj = journal.userID.trajectory || {};
+    const summary = journal.userID.publicUndercurrent || "Navigating a quiet period of inner reflection.";
+
     return res.status(200).json({
       success: true,
       personalityCard: {
-
         user: {
           id: journal.userID._id,
           name: journal.userID.name
         },
-
         emotionalState: {
-          dominantEmotion: journal.userID.trajectory?.dominant_emotion || "Neutral",
-          stability: journal.userID.trajectory?.stability_score || 0,
-          vector: journal.userID.trajectory?.emotion_vector || {}
+          dominantEmotion: traj.dominant_emotion || "neutral",
+          stability: traj.stability_score || 0,
+          vector: traj.emotion_vector || {}
         },
-
-        insight: journal.insight,
-
+        publicSummary: summary,
         latestJournal: {
-          text: journal.text,
           createdAt: journal.createdAt
         }
-
       }
     })
 

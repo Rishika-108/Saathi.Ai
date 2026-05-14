@@ -27,6 +27,12 @@ app.use(cors());
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
+// Socket.io injection middleware
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
 //API Endpoint to connect to user
 app.use("/api/user", userRouter);
 app.use("/api/journal", journalRouter);

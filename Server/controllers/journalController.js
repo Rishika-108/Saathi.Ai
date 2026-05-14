@@ -6,7 +6,7 @@ import { generateAlias } from "../utils/aliasGenerator.js";
 import { generateMatchReason } from "../utils/matchReason.js";
 import PeerRequest from "../model/peerRequestModel.js";
 import axios from "axios";
-import { generateInsights } from "../config/ai.js";
+import { generateInsights, generatePublicUndercurrent } from "../config/ai.js";
 
 const createJournalEntry = async (req, res) => {
   try {
@@ -100,7 +100,17 @@ export async function updateUserTrajectory(userID) {
     // 4️⃣ Update the user's trajectory in MongoDB
     await userModel.findByIdAndUpdate(userID, { trajectory }, { new: true });
 
-    console.log("Trajectory updated successfully for user:", userID);
+    // 5️⃣ Generate Public Undercurrent (Deep Narrative)
+    // Fetch last 3 journals for the deep narrative
+    const recentJournals = await JournalModel.find({ userID })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .lean();
+
+    const undercurrent = await generatePublicUndercurrent(recentJournals, trajectory);
+    await userModel.findByIdAndUpdate(userID, { publicUndercurrent: undercurrent });
+
+    console.log("Trajectory and Undercurrent updated successfully for user:", userID);
     return trajectory;
 
   } catch (error) {

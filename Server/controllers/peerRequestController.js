@@ -3,6 +3,7 @@ import userModel from "../model/userModel.js";
 import { generateAlias } from "../utils/aliasGenerator.js";
 import { generateMatchReason } from "../utils/matchReason.js";
 import { generateRoomId } from "../utils/room.js";
+import { userSockets } from "../socket/socketServer.js";
 
 export const selectPeer = async (req, res) => {
   try {
@@ -33,6 +34,15 @@ console.log("USER:", req.user)
       existing.roomId = roomId;
 
       await existing.save();
+
+      // Notify the other user via socket
+      const otherUserSocketId = userSockets.get(targetUserId);
+      if (otherUserSocketId) {
+        req.io.to(otherUserSocketId).emit("peer_matched", {
+          roomId,
+          matchedBy: fromUser
+        });
+      }
 
       return res.json({
         success: true,

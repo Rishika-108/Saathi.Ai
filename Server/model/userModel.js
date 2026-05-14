@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
     trajectory: {
         type: TrajectorySchema,
         default: null
+    },
+    publicUndercurrent: {
+        type: String,
+        default: "Navigating life's subtle shifts and quiet moments."
     }
 })
 userSchema.index({ "trajectory.dominant_emotion": 1 })
