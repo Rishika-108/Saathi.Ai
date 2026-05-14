@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Hardcoded Gemini API key
-const GEMINI_API_KEY = "temp_key";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 /**
  * Builds the reflective journal prompt
@@ -108,7 +108,7 @@ export const generateInsights = async (lastJournal, trajectory) => {
  */
 function buildUndercurrentPrompt(journals, trajectory) {
   const combinedText = journals.map((j, i) => `Journal ${i + 1}: ${j.text}`).join("\n\n");
-  
+
   return `
 You are a master of emotional prose and psychological subtext. 
 Your task is to describe a person's current "emotional undercurrent" based on their recent reflections.
@@ -142,7 +142,7 @@ Be specific about the feeling, not the events.
  */
 export const generatePublicUndercurrent = async (journals, trajectory) => {
   const prompt = buildUndercurrentPrompt(journals, trajectory);
-  const url = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=\${GEMINI_API_KEY}\`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   try {
     const response = await axios.post(url, {
@@ -155,4 +155,4 @@ export const generatePublicUndercurrent = async (journals, trajectory) => {
     console.error("Undercurrent AI Error:", error.message);
     return "Reflecting on life's subtle shifts and quiet moments.";
   }
-};
+};

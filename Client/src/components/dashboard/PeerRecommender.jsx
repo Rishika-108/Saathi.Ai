@@ -16,7 +16,7 @@ export default function PeerRecommender({ trajectory }) {
     setShowModal(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API}/journal/peer-matches`, {
+      const res = await fetch(`${API}/journal/matching`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
