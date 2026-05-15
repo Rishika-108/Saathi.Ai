@@ -3,19 +3,20 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "../Server/config/db.js";
 import userRouter from "../Server/routes/userRoutes.js";
-import journalRouter from '../Server/routes/journalRoutes.js' 
-import peerRoutes from "../Server/routes/peerRequestRoutes.js"; 
+import journalRouter from '../Server/routes/journalRoutes.js'
+import peerRoutes from "../Server/routes/peerRequestRoutes.js";
 import http from "http"
 import { Server } from "socket.io"
 import socketServer from "../Server/socket/socketServer.js";
 import feedRouter from "./routes/feedRoute.js";
-dotenv.config(); 
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors:{ 
-        origin: "http://localhost:5173", // Restrict to Client URL
+    cors: {
+        origin: ["http://localhost:5173",
+            "http://localhost:5174"], // Restrict to Client URL
         methods: ["GET", "POST"]
     }
 });
@@ -24,7 +25,7 @@ connectDB(); //Connect Database
 
 app.use(cors());
 
-app.use(express.json()); 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Socket.io injection middleware
@@ -41,7 +42,7 @@ app.use("/api/feed", feedRouter);
 
 
 app.get("/", (req, res) => {
-  res.send("API is running...");
+    res.send("API is running...");
 });
 
 const PORT = process.env.PORT || 5000;

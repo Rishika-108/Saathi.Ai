@@ -229,6 +229,7 @@ import AIInsight from "../components/dashboard/AIInsight";
 import ReflectionHeatmap from "../components/dashboard/ReflectionHeatmap";
 import EmotionRadar from "../components/dashboard/EmotionRadar";
 import PeerRecommender from "../components/dashboard/PeerRecommender";
+import ActiveChats from "../components/dashboard/ActiveChats";
 import Footer from "../components/Footer";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -408,6 +409,10 @@ export default function Dashboard() {
             <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <AIInsight trajectory={emotionalState} latest={latestEntry} insight={aiInsight} />
               <PeerRecommender trajectory={emotionalState} />
+              <ActiveChats />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="mt-6 grid gap-6 md:grid-cols-3">
               <ShareLinks />
             </motion.div>
 
@@ -433,7 +438,7 @@ export default function Dashboard() {
             {/* INSIGHTS GRID */}
             <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
               <ThemeInsights analysis={analysis} />
-              <ReflectionInsight entry={latestEntry} />
+              <ReflectionInsight insight={aiInsight} />
             </motion.div>
           </motion.div>
         )}

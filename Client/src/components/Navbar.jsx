@@ -35,22 +35,30 @@ export default function Navbar() {
     });
 
     socket.on("peer_matched", ({ roomId }) => {
+      // Store for fallback access
+      localStorage.setItem("activeRoomId", roomId);
+
       toast((t) => (
         <div className="flex flex-col gap-2">
-          <p className="font-semibold text-sm">Mutual match found! Someone wants to connect.</p>
+          <p className="font-semibold text-sm">🤝 Mutual match found!</p>
+          <p className="text-xs text-gray-500">Someone accepted your connection request. Start chatting now!</p>
           <button
             onClick={() => {
               toast.dismiss(t.id);
               navigate(`/chat/${roomId}`);
             }}
-            className="px-3 py-1 bg-primary text-white text-xs rounded-md"
+            className="px-4 py-2 bg-primary text-white text-xs rounded-md font-medium hover:opacity-90 transition"
           >
-            Join Chat
+            Open Chat Room →
           </button>
         </div>
       ), {
-        duration: 10000,
-        icon: "🤝"
+        duration: Infinity,
+        icon: "💬",
+        style: {
+          border: "1px solid rgba(99, 102, 241, 0.3)",
+          padding: "16px"
+        }
       });
     });
 

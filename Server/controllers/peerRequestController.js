@@ -172,3 +172,54 @@ export const getIncomingRequests = async (req, res) => {
     });
   }
 };
+
+export const getActiveChats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const matched = await PeerRequest.find({
+      status: "matched",
+      $or: [{ fromUser: userId }, { toUser: userId }]
+    }).lean();
+
+    if (!matched.length) {
+      return res.json({ success: true, chats: [] });
+    }
+
+    // Get the other user's info for each matched request
+    const otherUserIds = matched.map(m =>
+      m.fromUser.toString() === userId ? m.toUser : m.fromUser
+    );
+
+    const users = await userModel.find(
+      { _id: { $in: otherUserIds } },
+      { name: 1, trajectory: 1 }
+    ).lean();
+
+    const userMap = {};
+    users.forEach(u => { userMap[u._id.toString()] = u; });
+
+    const chats = matched.map(m => {
+      const otherId = m.fromUser.toString() === userId
+        ? m.toUser.toString()
+        : m.fromUser.toString();
+      const otherUser = userMap[otherId];
+
+      return {
+        roomId: m.roomId,
+        peer: {
+          id: otherId,
+          name: otherUser?.name || "Anonymous Saathi",
+          dominantEmotion: otherUser?.trajectory?.dominant_emotion || "neutral"
+        },
+        matchedAt: m.updatedAt
+      };
+    });
+
+    res.json({ success: true, chats });
+
+  } catch (error) {
+    console.error("Error fetching active chats:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch active chats" });
+  }
+};

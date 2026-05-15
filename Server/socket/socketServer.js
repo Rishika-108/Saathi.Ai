@@ -21,48 +21,52 @@ export default function socketServer(io) {
       userSockets.set(userId, socket.id);
     });
 
-    socket.on("join_chat", async ({ userId }) => {
+    socket.on("join_chat", async ({ userId, roomId }) => {
       userSockets.set(userId, socket.id); // Also register on join
-      console.log("JOIN REQUEST FROM:", userId);
+      console.log("JOIN REQUEST FROM:", userId, "ROOM:", roomId);
       try {
-        const match = await PeerRequest.findOne({
-          status: "matched",
-          $or: [{ fromUser: userId }, { toUser: userId }],
-        });
+        let actualRoomId = roomId;
 
-        console.log("MATCH RESULT:", match);
+        if (!actualRoomId) {
+          // Fallback if no roomId provided (shouldn't happen with updated client)
+          const match = await PeerRequest.findOne({
+            status: "matched",
+            $or: [{ fromUser: userId }, { toUser: userId }],
+          });
 
-        if (!match) {
-          socket.emit("error", "No active match found");
-          return;
+          if (!match) {
+            socket.emit("error", "No active match found");
+            return;
+          }
+          actualRoomId = match.roomId;
         }
-
-        const roomId = match.roomId;
-
-        const users = [match.fromUser.toString(), match.toUser.toString()];
 
         if (userToRoom.has(userId)) {
-          socket.emit("error", "User already in chat");
-          return;
+          // Might need to handle reconnecting vs already active
+          // socket.emit("error", "User already in chat");
+          // return;
         }
-        if (!activeChats.has(roomId)) {
-  createSession(roomId, users[0], users[1]);
-}
 
-        socket.join(roomId);
+        const users = actualRoomId.split("_").slice(1);
 
-        io.to(roomId).emit("joined_room", roomId);
+        if (!activeChats.has(actualRoomId)) {
+          createSession(actualRoomId, users[0], users[1]);
+        }
 
-        console.log(`Users joined room ${roomId}`);
+        socket.join(actualRoomId);
 
-        const roomSize = io.sockets.adapter.rooms.get(roomId)?.size || 0;
+        io.to(actualRoomId).emit("joined_room", actualRoomId);
+
+        console.log(`Users joined room ${actualRoomId}`);
+
+        const roomSize = io.sockets.adapter.rooms.get(actualRoomId)?.size || 0;
 
         if (roomSize === 2) {
-          console.log(`Chat session started: ${roomId}`);
+          console.log(`Chat session started: ${actualRoomId}`);
 
           setTimeout(() => {
-            io.to(roomId).emit("chat_ended");
-            endSession(roomId);
+            io.to(actualRoomId).emit("chat_ended");
+            endSession(actualRoomId);
           }, MAX_DURATION);
         }
       } catch (err) {
@@ -94,7 +98,7 @@ export default function socketServer(io) {
 
   console.log("MESSAGE:", message)
 
-  io.to(roomId).emit("receive_message",{
+  socket.to(roomId).emit("receive_message",{
     userId,
     message
   })

@@ -13,17 +13,19 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    const storedName = localStorage.getItem("userName");
 
-  if (token && token.length > 20) {
-    setUser({
-      name: "User",
-      isLoggedIn: true
-    });
-  } else {
-    localStorage.removeItem("token");
-  }
-}, []);
+    if (token && token.length > 20) {
+      setUser({
+        name: storedName || "Anonymous",
+        isLoggedIn: true
+      });
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userName");
+    }
+  }, []);
 
   const login = (userData, token) => {
     localStorage.setItem("token", token);

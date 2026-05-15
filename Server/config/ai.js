@@ -118,22 +118,31 @@ Someone is viewing this person's profile in a peer support community.
 They need to feel a deep, human connection to this person's internal world without reading their private journals.
 
 Style Guide:
-- Write in the THIRD PERSON ("He/She/They").
-- Use subtle, evocative, and poetic language. 
-- Avoid medical or clinical terms. 
-- Focus on the "quiet" emotions—the ones that sit underneath the surface.
-- Aim for a tone similar to: "He wasn’t devastated in the dramatic sense. It was quieter than that — a slow embarrassment sitting underneath everything he did that day."
+- Write in the THIRD PERSON ("They").
+- Use subtle, evocative, and literary language — like a passage from a novel about someone's inner life.
+- NEVER use clinical or medical terms (no "anxiety", "depression", "disorder").
+- NEVER mention journaling, writing, or the platform itself.
+- Focus on the "quiet" emotions — the ones that sit underneath the surface, the feelings between the feelings.
+- Describe HOW they carry their emotions through everyday moments, not WHAT happened to them.
+- Be specific about the texture of the feeling. Not "they felt sad" but "there was a heaviness they carried into every room, the kind that makes even laughter feel borrowed."
 
-Input Data:
+Example of the exact tone you must match:
+"He wasn't devastated in the dramatic sense. It was quieter than that — a slow embarrassment sitting underneath everything he did that day. Even ordinary conversations felt difficult, as if everyone could somehow see the disappointment he was trying to hide."
+
+Input Data (private — DO NOT reference or quote directly):
 ${combinedText}
 
-Trajectory Context:
+Trajectory Context (use as emotional compass, NEVER mention these terms):
 Dominant Emotion: ${trajectory.dominant_emotion}
 Stability: ${trajectory.stability_score}
+Volatility: ${trajectory.volatility || "unknown"}
+Weighted Sentiment: ${trajectory.weighted_sentiment || "unknown"}
 
-Output:
-Provide a 2-3 sentence narrative (max 60 words) that captures the "emotional weather" of this person right now. 
-Be specific about the feeling, not the events.
+Output Rules:
+- Write 3-5 sentences (80-120 words).
+- Capture the "emotional weather" of this person — the quiet truth of how they are moving through life right now.
+- Be specific about the feeling, never about the events.
+- Return ONLY the narrative text, no titles, no labels, no JSON.
 `;
 }
 

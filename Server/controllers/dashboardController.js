@@ -116,12 +116,7 @@ export const getUserPersonalityCard = async (req, res) => {
         createdAt: lastJournal.createdAt
       },
 
-      emotionalState: {
-        dominantEmotion: user.trajectory?.dominant_emotion ?? null,
-        sentimentScore: user.trajectory?.weighted_sentiment ?? null,
-        stability: user.trajectory?.stability_score ?? null,
-        volatility: user.trajectory?.volatility ?? null
-      },
+      emotionalState: user.trajectory ?? null,
 
       metadata: {
         generatedAt: new Date(),

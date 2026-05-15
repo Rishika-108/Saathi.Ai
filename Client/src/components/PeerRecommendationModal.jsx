@@ -1,13 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiHeart, FiUser } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function PeerRecommendationModal({ isOpen, onClose, peers = [], loading = false }) {
+  const navigate = useNavigate();
   if (!isOpen) return null;
-
-  // ... handleConnect ...
 
   const handleConnect = async (targetUserId) => {
     try {
@@ -22,7 +22,13 @@ export default function PeerRecommendationModal({ isOpen, onClose, peers = [], l
       });
       const data = await res.json();
       if (data.success) {
-        toast.success(data.message || "Request sent!");
+        if (data.matched && data.roomId) {
+          toast.success("It's a mutual match! Opening chat...", { icon: "🤝" });
+          onClose();
+          navigate(`/chat/${data.roomId}`);
+        } else {
+          toast.success(data.message || "Request sent! They'll be notified.");
+        }
       } else {
         toast.error(data.message || "Failed to send request");
       }

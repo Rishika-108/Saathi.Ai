@@ -87,26 +87,28 @@ let data = null;
     }
 
     if (data?.token) {
-  token = data.token;
-
-  const decoded = parseJwt(token);
-  const userId = decoded.id;
-
-  localStorage.setItem("userId", userId);
-}
+      token = data.token;
+      const decoded = parseJwt(token);
+      const userId = decoded.id;
+      localStorage.setItem("userId", userId);
+      
+      // Save name for persistence
+      if (data.user?.name) {
+        localStorage.setItem("userName", data.user.name);
+      }
+    }
 
   } catch (err) {
-
     console.error("Auth API error:", err);
     return;
-
   }
 
-const userData = {
-  email: formData.email,
-  id: localStorage.getItem("userId"),
-  isLoggedIn: true,
-};
+  const userData = {
+    name: data?.user?.name || localStorage.getItem("userName") || formData.name,
+    email: formData.email,
+    id: localStorage.getItem("userId"),
+    isLoggedIn: true,
+  };
 
   onAuthSuccess(userData, token);
 
